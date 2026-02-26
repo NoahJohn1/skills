@@ -39,11 +39,22 @@ gh issue view <number> --repo <owner>/<repo> --json title --jq '.title'
 
 Use this as the PR title.
 
-### Step 4 — Summarize changes
+### Step 4 — Commit any uncommitted changes
+
+Run `git status --short` to check for uncommitted changes. If any exist:
+
+1. Run `git diff --stat` to see what changed
+2. Stage all modified/deleted tracked files: `git add -u`
+3. Derive a commit message from the issue title and changed files (e.g. `fix: <short description>`)
+4. Commit: `git commit -m "<message>"`
+
+If there is nothing to commit, skip this step.
+
+### Step 5 — Summarize changes
 
 Run `git log main..HEAD --oneline` to list commits on this branch. Use the commit messages to write a short (2–5 bullet) summary of changes for the PR body.
 
-### Step 5 — Create the PR
+### Step 6 — Create the PR
 
 Run:
 ```
@@ -56,12 +67,29 @@ gh pr create \
 <bullet points from Step 4>"
 ```
 
-### Step 6 — Output
+### Step 7 — Merge the PR
 
-Print the PR URL so the user can open it directly.
+Run:
+```
+gh pr merge <pr-number> --repo <owner>/<repo> --squash --delete-branch
+```
+
+`--delete-branch` removes the remote branch. Wait for the command to succeed before continuing.
+
+### Step 8 — Delete local branch & switch to main
+
+```
+git checkout main
+git pull
+git branch -d <branch-name>
+```
+
+### Step 9 — Output
+
+Print the PR URL and confirm: merged, remote branch deleted, local branch deleted.
 
 ## Notes
 
 - `Closes #<number>` in the body is what GitHub uses to auto-link and auto-close the issue when the PR merges
-- If a PR already exists for this branch, `gh pr create` will error — handle by running `gh pr view --repo <owner>/<repo>` and printing the existing PR URL instead
+- If a PR already exists for this branch, `gh pr create` will error — handle by running `gh pr view --repo <owner>/<repo>` to get the PR number, then proceed to Step 7 with that PR number
 - Do not push the branch — assume the user has already pushed, or let `gh pr create` handle it (it will prompt if needed)
