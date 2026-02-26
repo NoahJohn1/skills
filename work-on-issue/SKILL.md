@@ -65,6 +65,14 @@ After the interview is complete, call `EnterPlanMode`. In plan mode:
 - The user approves the plan via `ExitPlanMode`
 - After approval, context is cleared and Claude implements the plan
 
+## After Implementation
+
+Once coding is complete and changes are committed, remind the user to run:
+```
+/submit-issue
+```
+This will auto-detect the issue number from the branch name and create a linked PR.
+
 ## Notes
 
 - Always read project CLAUDE.md first for repo config — never hardcode the repo
