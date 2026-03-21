@@ -1,0 +1,6 @@
+{
+  "eval_id": 2,
+  "eval_name": "refund-confirmation-modal",
+  "prompt": "Add a modal for confirming refunds with amount, reason dropdown, and a notes field",
+  "assertions": []
+}

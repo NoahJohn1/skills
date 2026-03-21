@@ -1,0 +1,378 @@
+@model IndabaWeb.CC.Extensions.Paging.PaginatedList<Order>
+@using IndabaWeb.CC.Biz.Cache;
+@using IndabaWeb.CC.Extensions;
+@using IndabaWeb.CC.DataBase;
+@using System.Text;
+@{
+    ViewBag.Title = "CareDaba - Customer Search";
+}
+
+<style>
+    .search-panel {
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 20px 24px;
+        margin-bottom: 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .search-panel h3 {
+        margin: 0 0 16px 0;
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+    }
+    .search-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: flex-end;
+    }
+    .search-field {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .search-field label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #555;
+    }
+    .search-field select,
+    .search-field input[type="text"] {
+        padding: 7px 10px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        font-size: 14px;
+        min-width: 200px;
+        transition: border-color 0.15s ease;
+    }
+    .search-field select:focus,
+    .search-field input[type="text"]:focus {
+        border-color: #4a90d9;
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(74, 144, 217, 0.2);
+    }
+    .btn-search {
+        padding: 8px 24px;
+        background: #4a90d9;
+        color: #fff;
+        border: none;
+        border-radius: 3px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s ease;
+    }
+    .btn-search:hover {
+        background: #357abd;
+    }
+    .btn-search:active {
+        background: #2a6099;
+    }
+    .btn-search:disabled {
+        background: #a0c4e8;
+        cursor: not-allowed;
+    }
+    .btn-secondary {
+        padding: 8px 24px;
+        background: #fff;
+        color: #555;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s ease;
+    }
+    .btn-secondary:hover {
+        background: #f5f5f5;
+    }
+    .search-actions {
+        display: flex;
+        gap: 8px;
+        align-items: flex-end;
+    }
+
+    /* Loading indicator */
+    .search-loading {
+        display: none;
+        text-align: center;
+        padding: 32px 16px;
+        color: #888;
+    }
+    .search-loading img {
+        display: block;
+        margin: 0 auto 8px;
+    }
+
+    /* Empty state */
+    .search-empty-state {
+        text-align: center;
+        padding: 48px 16px;
+        color: #999;
+    }
+    .search-empty-state h4 {
+        margin: 0 0 8px 0;
+        font-size: 16px;
+        color: #666;
+    }
+    .search-empty-state p {
+        margin: 0;
+        font-size: 14px;
+    }
+
+    /* Results area */
+    .results-panel {
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        overflow: hidden;
+    }
+    .results-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 20px;
+        border-bottom: 1px solid #eee;
+        background: #fafafa;
+    }
+    .results-header h4 {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 600;
+        color: #333;
+    }
+    .results-count {
+        font-size: 13px;
+        color: #888;
+    }
+
+    /* Results table */
+    .results-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .results-table thead th {
+        padding: 10px 16px;
+        text-align: left;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #888;
+        background: #fafafa;
+        border-bottom: 2px solid #eee;
+    }
+    .results-table tbody tr {
+        transition: background 0.1s ease;
+    }
+    .results-table tbody tr:hover {
+        background: #f0f6ff;
+    }
+    .results-table tbody td {
+        padding: 10px 16px;
+        font-size: 14px;
+        color: #333;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .results-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+    .customer-email-link {
+        color: #4a90d9;
+        text-decoration: none;
+    }
+    .customer-email-link:hover {
+        text-decoration: underline;
+    }
+    .customer-id-cell {
+        font-family: monospace;
+        font-size: 13px;
+        color: #666;
+    }
+
+    /* Keyboard hint */
+    .keyboard-hint {
+        font-size: 11px;
+        color: #bbb;
+        margin-left: 8px;
+    }
+    kbd {
+        background: #f4f4f4;
+        border: 1px solid #ddd;
+        border-radius: 3px;
+        padding: 1px 5px;
+        font-size: 11px;
+        font-family: inherit;
+    }
+
+    /* Bottom merge bar */
+    .merge-bar {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        padding: 12px 0;
+        margin-top: 16px;
+    }
+    .merge-bar .selected-count {
+        font-size: 13px;
+        color: #888;
+    }
+
+    /* Responsive adjustments */
+    @@media (max-width: 768px) {
+        .search-controls {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .search-field select,
+        .search-field input[type="text"] {
+            min-width: auto;
+            width: 100%;
+        }
+        .results-table {
+            font-size: 13px;
+        }
+        .results-table thead th,
+        .results-table tbody td {
+            padding: 8px 10px;
+        }
+    }
+</style>
+
+<div class="search-panel">
+    <h3>
+        <span>Search Customers</span>
+        <span class="keyboard-hint"><kbd>Enter</kbd> to search</span>
+    </h3>
+    <div class="search-controls">
+        <div class="search-field">
+            <label for="SelectParams">Search By</label>
+            <select id="SelectParams" aria-label="Select search parameter">
+                <option value="0">-- Select a parameter --</option>
+                @{
+                    StringBuilder sb = new StringBuilder("var propertiesAndTypes = [");
+                    string propertiesAndTypes = String.Empty;
+
+                    foreach (var o in CustomerFilterCache.GetProps())
+                    {
+                        sb.Append(String.Format(" [\"{0}\", \"{1}\"], ", o.Item2, o.Item3.Name));
+                        <option value="@o.Item2">@o.Item1</option>
+                    }
+                    sb.Remove(sb.Length - 2, 2);
+                    sb.Append(" ];");
+                }
+            </select>
+            @{
+                sb.Append(" var areaNames = [];");
+            }
+        </div>
+        <div class="search-field" id="someID">
+            @* Dynamic input rendered by JS based on selected parameter *@
+        </div>
+        <div class="search-actions">
+            <button type="button" id="ButtonSearch" class="btn-search" aria-label="Search customers">
+                Search
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="search-progress" class="search-loading" role="status" aria-live="polite">
+    <img src="@Url.Content("~/Content/icons/loading51.gif")" alt="Searching..." />
+    <span>Searching customers...</span>
+</div>
+
+<div id="search-empty" class="search-empty-state">
+    <h4>No search results yet</h4>
+    <p>Select a parameter and enter a value to find customers.</p>
+</div>
+
+<div id="search-result-container" style="display: none;">
+    <div class="results-panel">
+        <div class="results-header">
+            <h4>Results</h4>
+            <span class="results-count" id="results-count-label"></span>
+        </div>
+        <div id="search-result">
+            <table class="results-table" role="grid" aria-label="Customer search results">
+                <thead>
+                    <tr>
+                        <th scope="col"><input type="checkbox" id="selectAll" aria-label="Select all customers" /></th>
+                        <th scope="col">Customer ID</th>
+                        <th scope="col">Name</th>
+                        <th scope="col">Email</th>
+                        <th scope="col">Address</th>
+                        <th scope="col">City</th>
+                        <th scope="col">State</th>
+                        <th scope="col">Zip</th>
+                        <th scope="col">Country</th>
+                    </tr>
+                </thead>
+                <tbody id="search-result-body">
+                    @* Results populated via AJAX *@
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="merge-bar">
+        <button type="button" class="btn-secondary" title="Merge Selected Customers" onclick="Merge(); return false;">
+            Merge Selected
+        </button>
+        <span class="selected-count" id="selected-count-label">0 selected</span>
+    </div>
+</div>
+
+<div id="merge_window" class="ModalWindow" role="dialog" aria-modal="true" aria-label="Merge customers"></div>
+
+@{
+    @Html.Raw("<script language='javascript' type='text/javascript'>")
+    @Html.Raw(sb.ToString());
+    @Html.Raw("var SearchResultUrl ='" + @Url.Action("SearchResult") + "';");
+    @Html.Raw("var StopSearchUrl = '" + @Url.Action("StopSearch") + "';");
+    @Html.Raw("</script>");
+}
+
+@Html.Partial("_DynamicQueryPartial", null)
+
+<script type="text/javascript">
+    // Enter key triggers search
+    $(document).on('keydown', function (e) {
+        if (e.key === 'Enter' && !$(e.target).is('textarea')) {
+            e.preventDefault();
+            $('#ButtonSearch').click();
+        }
+    });
+
+    // Toggle empty state vs results container
+    function showResults() {
+        $('#search-empty').hide();
+        $('#search-result-container').show();
+    }
+    function showEmpty() {
+        $('#search-empty').show();
+        $('#search-result-container').hide();
+    }
+
+    // Select all checkbox
+    $('#selectAll').on('change', function () {
+        var checked = $(this).prop('checked');
+        $('.customer-checkbox').prop('checked', checked);
+        updateSelectedCount();
+    });
+
+    function updateSelectedCount() {
+        var count = $('.customer-checkbox:checked').length;
+        $('#selected-count-label').text(count + ' selected');
+    }
+
+    $(document).on('change', '.customer-checkbox', function () {
+        updateSelectedCount();
+    });
+</script>
+
+<script src="@Url.Content("~/Scripts/cc.customer.search.js")" type="text/javascript"></script>
+<script src="@Url.Content("~/Scripts/cc.customer.details.js")" type="text/javascript"></script>

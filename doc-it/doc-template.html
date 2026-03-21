@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{TITLE}}</title>
+  <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAG">
+  <style>
+    /* ══════════════════════════════════════════
+       BWB Doc-It Dashboard Template
+       Brand: Better World Books
+       ══════════════════════════════════════════ */
+
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+
+    :root {
+      /* BWB Brand Colors */
+      --bwb-blue: #0B69B1;
+      --bwb-blue-secondary: #4075AC;
+      --bwb-blue-light: #D7EBFF;
+      --bwb-green: #74C048;
+      --bwb-teal: #2EA477;
+      --bwb-green-light: #DCF2E5;
+
+      /* Section palette (BWB-derived) */
+      --s1: #0B69B1; --s1-bg: #f0f7ff; --s1-border: #D7EBFF;
+      --s2: #2EA477; --s2-bg: #f0faf5; --s2-border: #DCF2E5;
+      --s3: #4075AC; --s3-bg: #f2f6fb; --s3-border: #d4e2f0;
+      --s4: #74C048; --s4-bg: #f5fbf0; --s4-border: #d8f0c8;
+      --s5: #1a6b8a; --s5-bg: #f0f8fa; --s5-border: #cce8f0;
+      --s6: #3d8b5e; --s6-bg: #f2f9f5; --s6-border: #d0eadb;
+      --s7: #5a7dba; --s7-bg: #f4f6fb; --s7-border: #d8e1f2;
+      --s8: #4a9a6e; --s8-bg: #f3faf6; --s8-border: #d2eede;
+
+      /* Light theme */
+      --bg: #f5f7fa;
+      --bg-content: #ffffff;
+      --text: #1a1a2e;
+      --text-muted: #5a6577;
+      --text-light: #8892a4;
+      --sidebar-bg: #0B69B1;
+      --sidebar-text: #ffffff;
+      --sidebar-hover: rgba(255,255,255,0.12);
+      --sidebar-active: rgba(255,255,255,0.2);
+      --sidebar-divider: rgba(255,255,255,0.15);
+      --border: #e2e6ec;
+      --border-light: #eef1f5;
+      --code-bg: #f5f7fa;
+      --shadow: 0 1px 3px rgba(0,0,0,0.06);
+      --shadow-lg: 0 4px 12px rgba(0,0,0,0.08);
+      --success: #74C048;
+      --warn: #e8a735;
+      --danger: #c0392b;
+      --accent: var(--bwb-blue);
+    }
+
+    [data-theme="dark"] {
+      --bg: #0f1419;
+      --bg-content: #1a2028;
+      --text: #e1e5eb;
+      --text-muted: #8892a4;
+      --text-light: #5a6577;
+      --sidebar-bg: #0d1117;
+      --sidebar-text: #e1e5eb;
+      --sidebar-hover: rgba(255,255,255,0.06);
+      --sidebar-active: rgba(11,105,177,0.3);
+      --sidebar-divider: rgba(255,255,255,0.08);
+      --border: #2a3040;
+      --border-light: #222830;
+      --code-bg: #151b23;
+      --shadow: 0 1px 3px rgba(0,0,0,0.3);
+      --shadow-lg: 0 4px 12px rgba(0,0,0,0.4);
+
+      --s1-bg: #0d1a26; --s1-border: #1a3550;
+      --s2-bg: #0d1f18; --s2-border: #1a3d2e;
+      --s3-bg: #0f1520; --s3-border: #1e2d45;
+      --s4-bg: #141f0d; --s4-border: #2a3d1a;
+      --s5-bg: #0d171d; --s5-border: #1a3040;
+      --s6-bg: #0f1a14; --s6-border: #1e3528;
+      --s7-bg: #101520; --s7-border: #202d45;
+      --s8-bg: #0f1c15; --s8-border: #1e3828;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Montserrat', 'Segoe UI', system-ui, -apple-system, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.65;
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ── Sidebar ─────────────────────────────── */
+    .sidebar {
+      width: 270px;
+      min-width: 270px;
+      background: var(--sidebar-bg);
+      color: var(--sidebar-text);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      z-index: 100;
+      overflow-y: auto;
+      transition: transform 0.3s ease;
+    }
+
+    .sidebar-header {
+      padding: 1.5rem 1.25rem 1rem;
+      border-bottom: 1px solid var(--sidebar-divider);
+    }
+
+    .sidebar-logo {
+      height: 28px;
+      width: auto;
+      margin-bottom: 0.75rem;
+      display: block;
+    }
+
+    .sidebar-logo-dark { display: none; }
+    [data-theme="dark"] .sidebar-logo-light { display: none; }
+    [data-theme="dark"] .sidebar-logo-dark { display: block; }
+
+    .sidebar-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      line-height: 1.3;
+      opacity: 0.95;
+    }
+
+    .sidebar-meta {
+      font-size: 0.72rem;
+      opacity: 0.55;
+      margin-top: 0.3rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      padding: 0.75rem 0;
+      overflow-y: auto;
+    }
+
+    .sidebar-nav-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      opacity: 0.4;
+      padding: 0.5rem 1.25rem 0.35rem;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.6rem 1.25rem;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: all 0.15s;
+      border-left: 3px solid transparent;
+      text-decoration: none;
+      color: var(--sidebar-text);
+      opacity: 0.75;
+    }
+
+    .nav-item:hover {
+      background: var(--sidebar-hover);
+      opacity: 1;
+    }
+
+    .nav-item.active {
+      background: var(--sidebar-active);
+      border-left-color: var(--bwb-green);
+      opacity: 1;
+      font-weight: 600;
+    }
+
+    .nav-item .nav-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.4rem;
+      height: 1.4rem;
+      border-radius: 50%;
+      font-size: 0.7rem;
+      font-weight: 700;
+      background: rgba(255,255,255,0.15);
+      flex-shrink: 0;
+    }
+
+    .nav-item.active .nav-num {
+      background: var(--bwb-green);
+      color: #fff;
+    }
+
+    .sidebar-footer {
+      padding: 0.75rem 1.25rem;
+      border-top: 1px solid var(--sidebar-divider);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .theme-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 6px;
+      padding: 0.4rem 0.75rem;
+      color: var(--sidebar-text);
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+
+    .theme-toggle:hover {
+      background: rgba(255,255,255,0.18);
+    }
+
+    .theme-icon-light, .theme-icon-dark { font-size: 1rem; }
+    .theme-icon-dark { display: none; }
+    [data-theme="dark"] .theme-icon-light { display: none; }
+    [data-theme="dark"] .theme-icon-dark { display: inline; }
+
+    .sidebar-credit {
+      font-size: 0.65rem;
+      opacity: 0.35;
+    }
+
+    /* ── Mobile sidebar toggle ──────────────── */
+    .sidebar-toggle {
+      display: none;
+      position: fixed;
+      top: 0.75rem;
+      left: 0.75rem;
+      z-index: 200;
+      background: var(--bwb-blue);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      width: 40px;
+      height: 40px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow-lg);
+    }
+
+    /* ── Main content ────────────────────────── */
+    .main {
+      flex: 1;
+      margin-left: 270px;
+      padding: 2rem 2.5rem 4rem;
+      max-width: 100%;
+      min-height: 100vh;
+    }
+
+    .content-header {
+      margin-bottom: 2rem;
+      padding-bottom: 1.25rem;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .content-header h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1.3;
+    }
+
+    .content-header .meta {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-top: 0.35rem;
+    }
+
+    /* ── Section view switching ──────────────── */
+    .doc-section {
+      display: none;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .doc-section.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Section content card ────────────────── */
+    .section-card {
+      background: var(--bg-content);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .section-card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid var(--border-light);
+    }
+
+    .section-card-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.2rem;
+      height: 2.2rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .section-card-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+    }
+
+    /* Section color assignments */
+    .section-1 .section-card-num { background: var(--s1); }
+    .section-1 .section-card-header { border-bottom-color: var(--s1-border); }
+    .section-2 .section-card-num { background: var(--s2); }
+    .section-2 .section-card-header { border-bottom-color: var(--s2-border); }
+    .section-3 .section-card-num { background: var(--s3); }
+    .section-3 .section-card-header { border-bottom-color: var(--s3-border); }
+    .section-4 .section-card-num { background: var(--s4); }
+    .section-4 .section-card-header { border-bottom-color: var(--s4-border); }
+    .section-5 .section-card-num { background: var(--s5); }
+    .section-5 .section-card-header { border-bottom-color: var(--s5-border); }
+    .section-6 .section-card-num { background: var(--s6); }
+    .section-6 .section-card-header { border-bottom-color: var(--s6-border); }
+    .section-7 .section-card-num { background: var(--s7); }
+    .section-7 .section-card-header { border-bottom-color: var(--s7-border); }
+    .section-8 .section-card-num { background: var(--s8); }
+    .section-8 .section-card-header { border-bottom-color: var(--s8-border); }
+
+    /* Section-colored table headers */
+    .section-1 th { background: var(--s1); color: #fff; }
+    .section-2 th { background: var(--s2); color: #fff; }
+    .section-3 th { background: var(--s3); color: #fff; }
+    .section-4 th { background: var(--s4); color: #fff; }
+    .section-5 th { background: var(--s5); color: #fff; }
+    .section-6 th { background: var(--s6); color: #fff; }
+    .section-7 th { background: var(--s7); color: #fff; }
+    .section-8 th { background: var(--s8); color: #fff; }
+
+    /* ── Subsection (collapsible) ────────────── */
+    .subsection {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin: 1rem 0;
+      overflow: hidden;
+      background: var(--bg-content);
+    }
+
+    .subsection > summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 0.7rem 1rem;
+      font-size: 1rem;
+      font-weight: 600;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      user-select: none;
+      transition: background 0.15s;
+    }
+
+    .subsection > summary::-webkit-details-marker { display: none; }
+
+    .subsection > summary::before {
+      content: '\25B8';
+      font-size: 0.75rem;
+      transition: transform 0.2s;
+    }
+
+    .subsection[open] > summary::before {
+      transform: rotate(90deg);
+    }
+
+    .subsection > summary:hover { background: var(--border-light); }
+
+    .subsection-body {
+      padding: 0.75rem 1rem 1rem;
+    }
+
+    /* ── Step card ────────────────────────────── */
+    .step-card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin: 0.75rem 0;
+      overflow: hidden;
+    }
+
+    .step-card > summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 0.6rem 1rem;
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      user-select: none;
+    }
+
+    .step-card > summary::-webkit-details-marker { display: none; }
+
+    .step-card > summary::before {
+      content: '\25B8';
+      font-size: 0.7rem;
+      transition: transform 0.2s;
+    }
+
+    .step-card[open] > summary::before {
+      transform: rotate(90deg);
+    }
+
+    .step-card > summary:hover { background: var(--border-light); }
+
+    .step-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.35rem;
+      height: 1.35rem;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .step-card-body {
+      padding: 0.75rem 1rem 1rem;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── Typography ──────────────────────────── */
+    h2 { font-size: 1.25rem; font-weight: 700; margin: 1.75rem 0 0.6rem; color: var(--text); }
+    h3 { font-size: 1.1rem; font-weight: 600; margin: 1.5rem 0 0.5rem; }
+    h4 { font-size: 0.95rem; font-weight: 600; margin: 1.25rem 0 0.4rem; color: var(--accent); }
+    p  { margin: 0.5rem 0; }
+    ul, ol { margin: 0.5rem 0 0.5rem 1.5rem; }
+    li { margin: 0.3rem 0; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    strong { font-weight: 600; }
+
+    /* ── Tables ───────────────────────────────── */
+    .table-wrapper {
+      overflow-x: auto;
+      margin: 1rem 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+
+    th {
+      background: var(--accent);
+      color: white;
+      text-align: left;
+      padding: 0.65rem 0.85rem;
+      font-weight: 600;
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    td {
+      padding: 0.55rem 0.85rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    tr:nth-child(even) td { background: var(--bg); }
+
+    /* ── Code ─────────────────────────────────── */
+    code {
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      background: var(--code-bg);
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      font-size: 0.85em;
+      border: 1px solid var(--border);
+    }
+
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      margin: 1rem 0;
+      line-height: 1.5;
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+      border: none;
+      font-size: 0.85rem;
+    }
+
+    /* ── Callouts & badges ────────────────────── */
+    .callout {
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin: 1rem 0;
+      font-size: 0.92rem;
+    }
+
+    .callout-info {
+      background: var(--s1-bg);
+      border-left: 4px solid var(--bwb-blue);
+    }
+
+    .callout-warn {
+      background: #fffbf0;
+      border-left: 4px solid var(--warn);
+    }
+
+    [data-theme="dark"] .callout-warn { background: #1f1a0d; }
+
+    .callout-danger {
+      background: #fef5f5;
+      border-left: 4px solid var(--danger);
+    }
+
+    [data-theme="dark"] .callout-danger { background: #1f0d0d; }
+
+    .badge {
+      display: inline-block;
+      padding: 0.15rem 0.55rem;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .badge-info    { background: var(--bwb-blue-light); color: var(--bwb-blue); }
+    .badge-success { background: var(--bwb-green-light); color: #2d7a1a; }
+    .badge-warn    { background: #fff3d4; color: #8a6914; }
+    .badge-danger  { background: #fde8e8; color: #922; }
+
+    blockquote {
+      border-left: 4px solid var(--bwb-blue-light);
+      padding: 0.6rem 1rem;
+      margin: 1rem 0;
+      background: var(--s1-bg);
+      color: var(--text-muted);
+      border-radius: 0 6px 6px 0;
+    }
+
+    /* ── Responsive ──────────────────────────── */
+    @media (max-width: 900px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .sidebar-toggle {
+        display: flex;
+      }
+
+      .main {
+        margin-left: 0;
+        padding: 3.5rem 1.25rem 3rem;
+      }
+    }
+
+    @media (min-width: 1400px) {
+      .main {
+        padding: 2.5rem 4rem 4rem;
+      }
+    }
+
+    /* ── Print ────────────────────────────────── */
+    @media print {
+      .sidebar, .sidebar-toggle { display: none !important; }
+
+      .main {
+        margin-left: 0;
+        padding: 1rem;
+      }
+
+      .doc-section {
+        display: block !important;
+        page-break-inside: avoid;
+        margin-bottom: 2rem;
+      }
+
+      .section-card {
+        box-shadow: none;
+        border: 1px solid #ccc;
+        break-inside: avoid;
+      }
+
+      .subsection, .step-card {
+        border: 1px solid #ccc;
+      }
+
+      body { background: #fff; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Mobile sidebar toggle -->
+  <button class="sidebar-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')" aria-label="Toggle navigation">&#9776;</button>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <!-- BWB Logo (Color for light, White for dark) -->
+      <svg class="sidebar-logo sidebar-logo-light" viewBox="0 0 260 50" xmlns="http://www.w3.org/2000/svg"><defs><style>.bwb-c1{fill:none}.bwb-c4{fill:#fff}.bwb-c5{fill:rgba(255,255,255,0.6)}</style><clipPath id="bwb-cp"><path class="bwb-c1" d="M104,2.93c-4.18-.31-14.93-.28-15.1,8.38A6.65,6.65,0,0,0,81.8,8.09c-3.31.55-6.48,3.19-8.43,5.13a12.46,12.46,0,0,0-2.93,2.47c6.66,2.5,10.51,5,13.45,9.47a13.7,13.7,0,0,1,6.77-4c.21-.06.43-.11.65-.15a13.85,13.85,0,0,1,7.15.54c1.18-6.9,4.56-13.17,8.62-19a27.44,27.44,0,0,0-3,.33"/></clipPath><linearGradient id="bwb-lg" x1="0.58" y1="644.65" x2="2.86" y2="644.65" gradientTransform="matrix(16.09, 0, 0, -16.09, 61.12, 10387.33)" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#0061ad"/><stop offset=".37" stop-color="#08c"/><stop offset=".57" stop-color="#3ca586"/><stop offset=".79" stop-color="#67b955"/><stop offset="1" stop-color="#75c044"/></linearGradient></defs><g clip-path="url(#bwb-cp)"><rect fill="url(#bwb-lg)" x="70.44" y="2.6" width="36.64" height="22.55"/></g><path class="bwb-c4" d="M5,27.44h8.92a6.94,6.94,0,0,1,5,1.7,4.41,4.41,0,0,1,1.32,3.27v.05a4.48,4.48,0,0,1-2.53,4.15c2.22.85,3.6,2.14,3.6,4.72v.06c0,3.51-2.86,5.27-7.2,5.27H5Zm8,7.77c1.87,0,3.05-.61,3.05-2v-.06c0-1.26-1-2-2.77-2H9.11v4.07ZM14.13,43c1.87,0,3-.66,3-2.09v0c0-1.29-1-2.09-3.12-2.09H9.11V43Z"/><path class="bwb-c4" d="M23,39.38v-.05c0-4.21,3-7.66,7.28-7.66,4.92,0,7.17,3.81,7.17,8,0,.33,0,.71-.06,1.09H27.12a3.41,3.41,0,0,0,3.6,2.89,4.84,4.84,0,0,0,3.57-1.51l2.39,2.11a7.36,7.36,0,0,1-6,2.75A7.36,7.36,0,0,1,23,39.38m10.38-1.23C33.11,36.28,32,35,30.25,35s-2.85,1.23-3.18,3.13Z"/><path class="bwb-c4" d="M40.52,42.49v-7H38.76V31.94h1.76V28.18H44.7v3.76h3.46v3.57H44.7V41.8c0,1,.41,1.43,1.34,1.43a4.34,4.34,0,0,0,2.06-.52v3.35a6.15,6.15,0,0,1-3.29.85c-2.56,0-4.29-1-4.29-4.42"/><path class="bwb-c4" d="M51.23,42.49v-7H49.47V31.94h1.76V28.18h4.18v3.76h3.46v3.57H55.41V41.8c0,1,.41,1.43,1.34,1.43a4.34,4.34,0,0,0,2.06-.52v3.35a6.15,6.15,0,0,1-3.29.85c-2.56,0-4.29-1-4.29-4.42"/><path class="bwb-c4" d="M60.13,39.38v-.05c0-4.21,3-7.66,7.28-7.66,4.91,0,7.16,3.81,7.16,8,0,.33,0,.71,0,1.09H64.28a3.41,3.41,0,0,0,3.59,2.89,4.81,4.81,0,0,0,3.57-1.51l2.39,2.11a7.77,7.77,0,0,1-13.7-4.86m10.38-1.23c-.25-1.87-1.35-3.13-3.1-3.13s-2.86,1.23-3.19,3.13Z"/><path class="bwb-c4" d="M77,31.94h4.18v3c.85-2,2.22-3.35,4.69-3.25V36h-.22c-2.77,0-4.47,1.68-4.47,5.19v5.44H77Z"/><polygon class="bwb-c4" points="86.74 27.44 91.27 27.44 95.25 40.45 99.56 27.38 103.19 27.38 107.5 40.45 111.48 27.44 115.9 27.44 109.34 46.8 105.66 46.8 101.32 34.22 96.98 46.8 93.3 46.8 86.74 27.44"/><path class="bwb-c4" d="M115.41,39.38v-.05a7.73,7.73,0,0,1,8-7.67,7.65,7.65,0,0,1,7.94,7.61v.06a8,8,0,0,1-15.93.05m11.81,0v-.05a3.92,3.92,0,0,0-3.87-4.07,3.77,3.77,0,0,0-3.82,4v.06a3.91,3.91,0,0,0,3.87,4.06,3.77,3.77,0,0,0,3.82-4"/><path class="bwb-c4" d="M133.67,31.94h4.18v3c.85-2,2.22-3.35,4.69-3.25V36h-.22c-2.77,0-4.47,1.68-4.47,5.19v5.44h-4.18Z"/><rect class="bwb-c4" x="144.66" y="26.61" width="4.17" height="20.05"/><path class="bwb-c4" d="M151.41,39.33v-.06c0-4.91,3.22-7.61,6.7-7.61a5.66,5.66,0,0,1,4.59,2.2V26.61h4.17v20H162.7V44.54a5.4,5.4,0,0,1-4.59,2.39c-3.43,0-6.7-2.69-6.7-7.6m11.34,0v-.06c0-2.44-1.61-4.06-3.57-4.06s-3.59,1.59-3.59,4.06v.06a3.75,3.75,0,0,0,3.59,4.06c2,0,3.57-1.62,3.57-4.06"/><path class="bwb-c5" d="M170.53,27.44h8.62a6.9,6.9,0,0,1,5,1.7,4.26,4.26,0,0,1,1.29,3.18v.06a4.56,4.56,0,0,1-2.74,4.28c2.25.77,3.81,2.06,3.81,4.67v.06c0,3.43-2.82,5.27-7.11,5.27h-8.89Zm7.93,8.1c2.17,0,3.63-.85,3.63-2.61v-.06c0-1.51-1.21-2.44-3.38-2.44h-4.86v5.11Zm1,8.13c2.31,0,3.71-.91,3.71-2.64V41c0-1.61-1.29-2.58-4-2.58h-5.35v5.28Z"/><path class="bwb-c5" d="M188.49,39.49v-.05A7.73,7.73,0,0,1,204,39.38v.06A7.58,7.58,0,0,1,196.17,47a7.49,7.49,0,0,1-7.68-7.5m12.13,0v-.05a4.48,4.48,0,0,0-4.45-4.67,4.35,4.35,0,0,0-4.36,4.61v.06a4.5,4.5,0,0,0,4.42,4.67,4.38,4.38,0,0,0,4.39-4.62"/><path class="bwb-c5" d="M205.84,39.49v-.05a7.73,7.73,0,0,1,15.46-.06v.06a7.73,7.73,0,0,1-15.46.05m12.14,0v-.05a4.48,4.48,0,0,0-4.45-4.67,4.36,4.36,0,0,0-4.37,4.61v.06a4.5,4.5,0,0,0,4.43,4.67A4.38,4.38,0,0,0,218,39.49"/><polygon class="bwb-c5" points="223.99 26.61 227.32 26.61 227.32 38.59 233.33 32.16 237.37 32.16 231.6 38.06 237.56 46.66 233.72 46.66 229.35 40.4 227.32 42.51 227.32 46.66 223.99 46.66 223.99 26.61"/><path class="bwb-c5" d="M238.11,44.76l1.48-2.25a8.17,8.17,0,0,0,4.75,1.79c1.43,0,2.25-.61,2.25-1.57v0c0-1.13-1.53-1.51-3.24-2-2.14-.61-4.53-1.49-4.53-4.26v-.06c0-2.74,2.28-4.42,5.17-4.42a10,10,0,0,1,5.32,1.65L248,35.92a8.41,8.41,0,0,0-4.09-1.37c-1.29,0-2,.6-2,1.45v.06c0,1,1.57,1.48,3.27,2,2.11.66,4.5,1.62,4.5,4.23v.06c0,3-2.36,4.55-5.38,4.55a10.16,10.16,0,0,1-6.15-2.17"/></svg>
+      <div class="sidebar-title">{{TITLE}}</div>
+      <div class="sidebar-meta">{{PROJECT}} &middot; {{DATE}}</div>
+    </div>
+
+    <nav class="sidebar-nav" id="sidebar-nav">
+      <div class="sidebar-nav-label">Sections</div>
+      <!-- Nav items auto-generated by JS -->
+    </nav>
+
+    <div class="sidebar-footer">
+      <span class="sidebar-credit">Claude Code</span>
+      <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode">
+        <span class="theme-icon-light">&#9790;</span>
+        <span class="theme-icon-dark">&#9788;</span>
+        <span class="theme-label-light">Dark</span>
+        <span class="theme-label-dark" style="display:none">Light</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <div class="main">
+    <div class="content-header">
+      <h1>{{TITLE}}</h1>
+      <div class="meta">{{PROJECT}} &middot; Generated {{DATE}}</div>
+    </div>
+
+    <div id="content-area">
+      {{CONTENT}}
+    </div>
+  </div>
+
+  <script>
+    // ── Theme toggle ──────────────────────────
+    function toggleTheme() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('doc-it-theme', next);
+      document.querySelector('.theme-label-light').style.display = next === 'dark' ? 'none' : '';
+      document.querySelector('.theme-label-dark').style.display = next === 'dark' ? '' : 'none';
+    }
+
+    // Restore saved theme
+    (function() {
+      const saved = localStorage.getItem('doc-it-theme');
+      if (saved) {
+        document.documentElement.setAttribute('data-theme', saved);
+        document.querySelector('.theme-label-light').style.display = saved === 'dark' ? 'none' : '';
+        document.querySelector('.theme-label-dark').style.display = saved === 'dark' ? '' : 'none';
+      }
+    })();
+
+    // ── Auto-generate nav & view switching ────
+    (function() {
+      const sections = document.querySelectorAll('.doc-section');
+      const nav = document.getElementById('sidebar-nav');
+      const navLabel = nav.querySelector('.sidebar-nav-label');
+
+      if (sections.length === 0) return;
+
+      sections.forEach(function(section, i) {
+        const title = section.getAttribute('data-title') || 'Section ' + (i + 1);
+        const colorClass = 'section-' + ((i % 8) + 1);
+
+        // Add color class to section
+        section.classList.add(colorClass);
+
+        // Create nav item
+        var item = document.createElement('a');
+        item.className = 'nav-item';
+        item.setAttribute('data-index', i);
+        item.innerHTML = '<span class="nav-num">' + (i + 1) + '</span>' + title;
+        item.href = '#';
+        item.addEventListener('click', function(e) {
+          e.preventDefault();
+          showSection(i);
+          // Close mobile sidebar
+          document.querySelector('.sidebar').classList.remove('open');
+        });
+        nav.appendChild(item);
+      });
+
+      function showSection(index) {
+        sections.forEach(function(s) { s.classList.remove('active'); });
+        sections[index].classList.add('active');
+
+        var navItems = nav.querySelectorAll('.nav-item');
+        navItems.forEach(function(n) { n.classList.remove('active'); });
+        navItems[index].classList.add('active');
+      }
+
+      // Show first section by default
+      showSection(0);
+
+      // Keyboard navigation
+      document.addEventListener('keydown', function(e) {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        var current = nav.querySelector('.nav-item.active');
+        var idx = current ? parseInt(current.getAttribute('data-index')) : 0;
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+          e.preventDefault();
+          showSection(Math.max(0, idx - 1));
+        } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+          e.preventDefault();
+          showSection(Math.min(sections.length - 1, idx + 1));
+        }
+      });
+    })();
+  </script>
+
+  <!--
+  ═══════════════════════════════════════════════════════════════
+  USAGE GUIDE — How to build content inside {{CONTENT}}
+  ═══════════════════════════════════════════════════════════════
+
+  Each top-level section is a <section> with class "doc-section"
+  and a data-title attribute for the sidebar nav label.
+  The JS auto-assigns section-N color classes and builds the nav.
+
+  ── Section with card layout ──────────────────────────────────
+
+  <section class="doc-section" data-title="Overview">
+    <div class="section-card">
+      <div class="section-card-header">
+        <span class="section-card-num">1</span>
+        <span class="section-card-title">Overview</span>
+      </div>
+      ...content (paragraphs, tables, lists, code, subsections)...
+    </div>
+  </section>
+
+  ── Subsection (collapsible, within a section-card) ───────────
+
+  <details class="subsection" open>
+    <summary>Subsection Title</summary>
+    <div class="subsection-body">
+      ...content...
+    </div>
+  </details>
+
+  ── Step card (collapsible, numbered procedure) ───────────────
+  Defaults to CLOSED to reduce visual noise.
+
+  <details class="step-card">
+    <summary>
+      <span class="step-num">1</span>
+      <code>procedureName</code> — Description
+    </summary>
+    <div class="step-card-body">
+      ...content...
+    </div>
+  </details>
+
+  ── Tables ────────────────────────────────────────────────────
+  Wrap in .table-wrapper for horizontal scroll on narrow screens:
+
+  <div class="table-wrapper">
+    <table>
+      <thead><tr><th>Col 1</th><th>Col 2</th></tr></thead>
+      <tbody><tr><td>Value</td><td>Value</td></tr></tbody>
+    </table>
+  </div>
+
+  ── Callouts ──────────────────────────────────────────────────
+  <div class="callout callout-info">Info message</div>
+  <div class="callout callout-warn">Warning message</div>
+  <div class="callout callout-danger">Critical message</div>
+
+  ── Badges ────────────────────────────────────────────────────
+  <span class="badge badge-info">INFO</span>
+  <span class="badge badge-success">PASS</span>
+  <span class="badge badge-warn">WARNING</span>
+  <span class="badge badge-danger">FAIL</span>
+
+  ── Keyboard navigation ──────────────────────────────────────
+  Arrow Left/Up = previous section
+  Arrow Right/Down = next section
+
+  ═══════════════════════════════════════════════════════════════
+  -->
+</body>
+</html>

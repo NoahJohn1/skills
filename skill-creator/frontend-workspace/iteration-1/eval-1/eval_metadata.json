@@ -1,0 +1,6 @@
+{
+  "eval_id": 1,
+  "eval_name": "cleanup-order-details",
+  "prompt": "The order details page looks cramped and hard to read, can you clean it up?",
+  "assertions": []
+}

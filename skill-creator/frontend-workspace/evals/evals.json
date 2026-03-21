@@ -1,0 +1,23 @@
+{
+  "skill_name": "frontend",
+  "evals": [
+    {
+      "id": 0,
+      "prompt": "I need to build a new customer search page with a search bar and results table",
+      "expected_output": "A Razor .cshtml view with Bootstrap-styled search bar and results table, incorporating UX feedback on visual hierarchy, spacing, and accessibility",
+      "files": []
+    },
+    {
+      "id": 1,
+      "prompt": "The order details page looks cramped and hard to read, can you clean it up?",
+      "expected_output": "Improved version of the existing order details view with better spacing, typography, and visual hierarchy based on UX analysis",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Add a modal for confirming refunds with amount, reason dropdown, and a notes field",
+      "expected_output": "A Bootstrap modal partial view with proper form elements, validation states, and UX-reviewed interaction patterns",
+      "files": []
+    }
+  ]
+}

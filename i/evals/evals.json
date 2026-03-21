@@ -1,0 +1,26 @@
+{
+  "skill_name": "i",
+  "evals": [
+    {
+      "id": 0,
+      "prompt": "add retry logic to the order processing service",
+      "expected_output": "Should read relevant code first, then ask smart batched questions about retry strategy, scope, error types, and existing patterns before coding. Should auto-calibrate to medium depth (2-3 rounds).",
+      "files": [],
+      "assertions": []
+    },
+    {
+      "id": 1,
+      "prompt": "the payment refund endpoint is returning 500 errors intermittently in production",
+      "expected_output": "Should recognize this as a bug investigation, read relevant payment code, then ask focused questions about repro steps, frequency, recent changes, environment, and logs. Should not jump to fixing without understanding the problem.",
+      "files": [],
+      "assertions": []
+    },
+    {
+      "id": 2,
+      "prompt": "we need to migrate our notification system from email-only to support email, SMS, and push notifications",
+      "expected_output": "Should recognize this as a large/complex task, do a full deep dive interview covering all dimensions, batch independent questions smartly, and suggest Plan Mode after the interview completes.",
+      "files": [],
+      "assertions": []
+    }
+  ]
+}

@@ -1,0 +1,1105 @@
+@using System.Collections.Generic
+@using System.Text
+@using System.Linq
+@using System.Linq.Expressions
+@using System.Configuration
+@using System.Web.Configuration
+@using IndabaWeb.CC.Biz
+@using IndabaWeb.CC.Biz.Cache
+@using IndabaWeb.CC.Biz.Enums
+@using IndabaWeb.CC.DataBase
+@using IndabaWeb.CC.Extensions
+@using IndabaWeb.CC.Models.Orders
+@using IndabaMerchant.Data
+@using IndabaWeb.CC.Models.Enums
+
+@model Tuple<Order, IEnumerable<Shipment>>
+@{
+    ViewBag.Title = string.Format("Order Details [{0}]", Model.Item1.MarketOrderNumber);
+}
+
+<style type="text/css">
+    body {
+        margin-bottom: 60px !important;
+    }
+
+    /* ── Page-level overrides for improved spacing & readability ── */
+
+    .od-page {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 12px;
+    }
+
+    /* ── Card wrapper ── */
+    .od-card {
+        background: #fff;
+        border: 1px solid #c5d9ad;
+        border-radius: 4px;
+        margin-bottom: 14px;
+        overflow: hidden;
+    }
+
+    .od-card-header {
+        background: linear-gradient(to bottom, #e8f3da, #d6e8c3);
+        border-bottom: 1px solid #b3cc8f;
+        padding: 8px 14px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px 14px;
+        font-size: 13px;
+        line-height: 1.6;
+    }
+
+    .od-card-header strong {
+        font-size: 14px;
+    }
+
+    .od-card-header .od-action-link {
+        color: #2e4914;
+        text-decoration: none;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 12px;
+        white-space: nowrap;
+        transition: background 0.15s;
+    }
+
+    .od-card-header .od-action-link:hover {
+        background: rgba(46, 73, 20, 0.1);
+        color: #1a2e0a;
+    }
+
+    .od-card-header .od-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        border-radius: 3px;
+        font-size: 11px;
+        font-weight: 600;
+        background: #f0f4e8;
+        border: 1px solid #c5d9ad;
+    }
+
+    .od-card-header .od-hold-group {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .od-card-header .od-btn-sm {
+        padding: 3px 10px;
+        font-size: 11px;
+        border: 1px solid #8faa6a;
+        background: #f5f9ef;
+        border-radius: 3px;
+        cursor: pointer;
+        color: #2e4914;
+        transition: background 0.15s;
+    }
+
+    .od-card-header .od-btn-sm:hover {
+        background: #e0edcf;
+    }
+
+    .od-card-header .od-btn-sm:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .od-copy-icon {
+        cursor: pointer;
+        height: 10px;
+        width: 10px;
+        opacity: 0.5;
+        transition: opacity 0.15s;
+        vertical-align: middle;
+    }
+
+    .od-copy-icon:hover {
+        opacity: 1;
+    }
+
+    /* ── Two-column info grid ── */
+    .od-info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        padding: 0;
+    }
+
+    @@media (max-width: 900px) {
+        .od-info-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* ── Data rows inside cards ── */
+    .od-card-body {
+        padding: 10px 14px;
+    }
+
+    .od-data-row {
+        display: flex;
+        align-items: baseline;
+        padding: 4px 0;
+        border-bottom: 1px solid #f0f0f0;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+    .od-data-row:last-child {
+        border-bottom: none;
+    }
+
+    .od-data-label {
+        flex: 0 0 130px;
+        font-weight: 600;
+        color: #3a5a1e;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+
+    .od-data-value {
+        flex: 1;
+        color: #333;
+    }
+
+    .od-data-value .button {
+        font-size: 11px;
+        padding: 2px 8px;
+    }
+
+    /* ── Shipping address block ── */
+    .od-address-block {
+        background: #f9fbf5;
+        border: 1px solid #e0e8d4;
+        border-radius: 3px;
+        padding: 8px 12px;
+        font-size: 13px;
+        line-height: 1.6;
+        color: #444;
+    }
+
+    /* ── Customer section with refund badges ── */
+    .od-refund-badge {
+        display: inline-block;
+        padding: 1px 8px;
+        border-radius: 10px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    /* ── Notes section ── */
+    .od-notes-header {
+        background: #BDDE96;
+        padding: 6px 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-weight: 600;
+        font-size: 13px;
+        color: #2e4914;
+        border-top: 1px solid #a5c87c;
+    }
+
+    .od-notes-body {
+        padding: 4px 14px 10px;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    /* ── Refunds table ── */
+    .od-refund-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+
+    .od-refund-table caption {
+        text-align: left;
+        background-color: #daebca;
+        padding: 6px 14px;
+        color: #333;
+        font-weight: 600;
+        font-size: 13px;
+    }
+
+    .od-refund-table th {
+        background: #f0f5e8;
+        padding: 6px 10px;
+        text-align: left;
+        font-size: 12px;
+        font-weight: 600;
+        color: #3a5a1e;
+        border-bottom: 2px solid #b3cc8f;
+    }
+
+    .od-refund-table td {
+        padding: 6px 10px;
+        border-bottom: 1px solid #e8e8e8;
+    }
+
+    /* ── Shipment card specifics ── */
+    .od-shipment-meta {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0 20px;
+        padding: 10px 14px;
+        font-size: 13px;
+    }
+
+    @@media (max-width: 700px) {
+        .od-shipment-meta {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .od-shipment-meta .od-meta-item {
+        display: flex;
+        padding: 3px 0;
+        border-bottom: 1px solid #f5f5f5;
+    }
+
+    .od-shipment-meta .od-meta-label {
+        flex: 0 0 160px;
+        font-weight: 600;
+        color: #555;
+        font-size: 12px;
+    }
+
+    .od-shipment-meta .od-meta-value {
+        flex: 1;
+        color: #333;
+    }
+
+    /* ── Items table ── */
+    .od-items-toggle {
+        background: #f0f4e8;
+        padding: 6px 14px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 600;
+        color: #2e4914;
+        border-top: 1px solid #d6e8c3;
+        border-bottom: 1px solid #d6e8c3;
+        user-select: none;
+        transition: background 0.15s;
+    }
+
+    .od-items-toggle:hover {
+        background: #e4ecd6;
+    }
+
+    .od-items-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+    }
+
+    .od-items-table th {
+        background: #f5f8ef;
+        padding: 7px 8px;
+        text-align: left;
+        font-size: 11px;
+        font-weight: 600;
+        color: #3a5a1e;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        border-bottom: 2px solid #b3cc8f;
+        white-space: nowrap;
+    }
+
+    .od-items-table td {
+        padding: 6px 8px;
+        vertical-align: top;
+        border-bottom: 1px solid #eee;
+    }
+
+    .od-items-table tr.v1 { background-color: #fff; }
+    .od-items-table tr.v2 { background-color: #f5f5f5; }
+    .od-items-table tr.v3 { background-color: #FBBBB9; }
+    .od-items-table tr.v4 { background-color: #F9966B; }
+
+    .od-items-table tr:hover {
+        background-color: #f0f5e6 !important;
+    }
+
+    .od-items-table tr.v3:hover,
+    .od-items-table tr.v4:hover {
+        opacity: 0.9;
+    }
+
+    .od-items-table a {
+        color: #6633CC;
+        text-decoration: none;
+    }
+
+    .od-items-table a:hover {
+        text-decoration: underline;
+        color: #FF3300;
+    }
+
+    .od-items-table a:visited {
+        color: #006633;
+    }
+
+    .od-item-total {
+        text-align: right;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .od-breakdown-detail {
+        font-size: 11px;
+        line-height: 1.6;
+        color: #555;
+        text-align: right;
+    }
+
+    .od-breakdown-detail .od-breakdown-line {
+        display: flex;
+        justify-content: space-between;
+        padding: 1px 0;
+    }
+
+    /* ── Bottom action bar ── */
+    .od-bottom-bar {
+        padding: 10px 20px;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background: linear-gradient(to bottom, #e2f3d0, #cce8b5);
+        border-top: 2px solid #83b44a;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        z-index: 100;
+        box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+    }
+
+    .od-bottom-bar .button {
+        padding: 6px 16px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .od-bottom-bar .od-items-count {
+        font-size: 13px;
+        font-weight: 700;
+        margin-left: 12px;
+        color: #2e4914;
+    }
+
+    /* ── Utility ── */
+    .od-separator {
+        border-left: 1px solid #b3cc8f;
+        height: 18px;
+        display: inline-block;
+        vertical-align: middle;
+        margin: 0 4px;
+    }
+</style>
+
+<script type="text/javascript">
+    var inHistory = '@Model.Item1.IsInHistory',
+        customerFullName = 'Customer Information [@Model.Item1.Customer.FullName]',
+        addNoteLink = '@Html.ActionLink("Add Note", "SaveShipmentNote", null, new { id = "linkAddNote" })',
+        orderNotesUrlWithId = '@Url.Action("OrderNotes", new { orderId = @Model.Item1.OrderId })',
+        customerNotesUrl = '@Url.Action("CustomerNotes", new { customerId = @Model.Item1.CustomerId })',
+        shipmentNotesUrl = '@Url.Action("ShipmentNotes")' + "?shipmentId=",
+        holdShipmentUrl = '@Url.Action("HoldShipment")',
+        searchOrderUrl = '@Url.Action("SearchOrder")?orderNumber=',
+        orderDetailsUrl = '@Url.Action("OrderDetails")?orderId=',
+        orderDetailsAbsoluteUrl = '@Url.Action("OrderDetails")',
+        transactionDetailsUrl = '@Url.Action("TransactionDetails")',
+        payPalIcon = '@Url.Content("~/Content/icons/pp.png")',
+        OrderId = @Model.Item1.OrderId,
+        processCheckedItemsUrl = '@Url.Action("ProcessCheckedItems")',
+        SaveTagsUrl = '@Url.Action("SaveTags")',
+        MarketOrderNumber = '@Model.Item1.MarketOrderNumber',
+        LockedResourcesUrl = '@Url.Action("GetLockedResources")',
+        EditOrderUrl = '@Url.Action("EditOrder")?orderId=@Model.Item1.OrderId.ToString()',
+        CheckLockedUrl = '@Url.Action("CheckEditOrder")?orderId=@Model.Item1.OrderId.ToString()';
+</script>
+
+<script src="@Url.Content("~/Scripts/yui-min.js")" type="text/javascript"></script>
+<script src="@Url.Content("~/Scripts/jquery.tooltip.js")" type="text/javascript"></script>
+<script src="@Url.Content("~/Scripts/jquery.center.js")" type="text/javascript"></script>
+<script src="@Url.Content("~/Scripts/cc.common.js")" type="text/javascript"></script>
+
+@using (Html.BeginForm("OrderDetails", "Orders", new { orderId = Model.Item1.OrderId }))
+{
+    <input id="actionName" type="hidden" name="actionName" />
+    @Html.Hidden("orderIds");
+    @Html.Hidden("shipmentIds");
+    @Html.Hidden("currentShipmentId")
+    @Html.Hidden("unCancelbuttonVisible")
+    @Html.Hidden("unRefundbuttonVisible")
+    <input id="firstRun" type="hidden" />
+    <script src="@Url.Content("~/Scripts/cc.order.notes.js")" type="text/javascript"></script>
+    <script src="@Url.Content("~/Scripts/cc.order.details.js")" type="text/javascript"></script>
+    <script src="@Url.Content("~/Scripts/cc.customer.details.js")" type="text/javascript"></script>
+    <div id="add-notes" class="ModalWindow"></div>
+    <div id="tags" class="ModalWindow"></div>
+    <div id="payments" class="ModalWindow"></div>
+    <div id="paypal_transaction" class="ModalWindow"></div>
+    <div id="modal_window" class="ModalWindow"></div>
+
+    <div class="od-page">
+
+        @* ══════════════════════════════════════════════════════════
+           ORDER HEADER CARD
+           ══════════════════════════════════════════════════════════ *@
+        <div class="od-card">
+            <div class="od-card-header">
+                <span>
+                    Order #<strong>@Model.Item1.MarketOrderNumber</strong>
+                    <img src="~/Content/icons/Document-Copy-icon.png" class="od-copy-icon"
+                         onclick="CopyItem('@Html.Raw(Model.Item1.MarketOrderNumber.ToString())'); return false;" />
+                </span>
+                <span class="od-badge">@Html.Partial("StatusPartial", new StatusModel(Model.Item1.Status, 0))</span>
+                @{
+                    foreach (var sh in Model.Item2)
+                    {
+                        if (sh.MarketBookOrders.Where(mbo => mbo.GiftWrapping == true).Count() > 0
+                            || sh.MarketBookOrders.Where(mbo => !String.IsNullOrWhiteSpace(mbo.GiftMessage)).Count() > 0)
+                        {
+                            <span>
+                                @Html.ActionLinkWithImage(Url.Content("~/Content/icons/gift-icon.png"), "ShowGiftInformation",
+                                    new { orderId = Model.Item1.OrderId },
+                                    new { title = "Show gift information", onclick = "ShowGiftInformation(this)", @class = "od-action-link" })
+                            </span>
+                            break;
+                        }
+                    }
+                }
+                <span class="od-separator"></span>
+                @Html.ActionLinkWithImage(Url.Content("~/Content/icons/doc-edit-icon.png"), "Edit", "CheckEditOrder", new { orderId = Model.Item1.OrderId },
+                    new { onclick = "EditOrder(this); return false", id = "editOrderLink", @class = "od-action-link" })
+                @{
+                    string tagsTitle = Model.Item1.GetTags();
+                    string noTagsMsg = "";
+                    bool haveTags = !String.IsNullOrWhiteSpace(tagsTitle);
+                }
+                @Html.ActionLink("Tags", "TagsView", new { entityId = Model.Item1.OrderId, tagType = TagType.Order },
+                    new {
+                        title = haveTags ? tagsTitle : noTagsMsg,
+                        @class = "od-action-link" + (haveTags ? " tags" : ""),
+                        @style = haveTags ? "color:Red" : String.Empty,
+                        onclick = "get_tags(this, 'Order Tags [# " + @Model.Item1.MarketOrderNumber + "]'); return false",
+                        id = String.Format("TagsLink{0}{1}", DateTime.Now.Second, DateTime.Now.Millisecond)
+                    })
+                @Html.ActionLink("Payments", "PaymentsForOrder", new { orderId = Model.Item1.OrderId },
+                    new { title = "View Payments", @class = "od-action-link", onclick = "get_payments(this, 'Order Payments [# " + @Model.Item1.MarketOrderNumber + "]'); return false" })
+                @{var ppTransaction = Model.Item1.GetFirstPayPalTransaction();
+                    if (ppTransaction != null)
+                    {
+                        <a href="@Url.Action("TransactionDetails", "Orders", new { paymentTransactionID = ppTransaction.TransactionID, showAll = true })"
+                           class="od-action-link" title="View PayPal Transactions History"
+                           onclick="get_paypal_transaction_details(this, '@("PayPal transactions for Order# [" + @Model.Item1.MarketOrderNumber + "]")', '@(ppTransaction.TransactionID)' ); return false">
+                            <img src="@Url.Content("~/Content/icons/pp.png")" alt="PayPal" style="vertical-align: middle; height: 14px;" /> PayPal
+                        </a>
+                    }
+                }
+                @if (Model.Item1.MarketId == (byte)MarketNames.MBWBStore)
+                {
+                    var url = WebConfigurationManager.AppSettings["BWBAdminConsoleUrl"].ToString() + "\\Order\\Details\\?id=0&orderNumber=" + @Model.Item1.MarketOrderNumber;
+                    <a href="@url" target="_blank" class="od-action-link">
+                        <img src="@Url.Content("~/Content/icons/console-icon.png")" alt="Console" style="vertical-align: middle; height: 14px;" /> Admin Console
+                    </a>
+                }
+                <span class="od-separator"></span>
+                <span class="od-hold-group">
+                    <input id="CheckboxHoldOrder" type="checkbox" title="Hold" @(Model.Item1.IsHeld ? "checked" : String.Empty)
+                           onclick="update_order_isheld('@Url.Action("HoldOrder", new { OrderId = @Model.Item1.OrderId })', this)" />
+                    <label for="CheckboxHoldOrder">Hold</label>
+                    @Html.Image(Url.Content("~/Content/icons/loading.gif"), null, new { id = "order-held-loading", style = "display:none" })
+                </span>
+                @{
+                    var block = Model.Item1.GetBlockOrderArrivalConfirmationButtonStatus();
+                }
+                <input title="@block.Item1" id="arrivalConfButton" type="button" class="od-btn-sm"
+                       @(block.Item2 ? "disabled" : String.Empty)
+                       onclick="BlockOrderArrivalConfirmation('@Url.Action("BlockOrderArrivalConfirmation")', this);"
+                       value="@EnumTranslator.GetDescription(Model.Item1.ArrivalConfirmationEnum)" />
+                <input class="od-btn-sm" id="orderStatusTemplateButton" type="button"
+                       value="Status Template" onclick="GetOrderStatusTemplate('@Url.Action("GetOrderStatusTemplate")', this);" />
+                @{
+                    var signatures = Model.Item1.GetInHistoryText();
+                }
+                <input class="od-btn-sm" id="pendingOrHistoryButton" type="button"
+                       title="@signatures.Item2" value="@signatures.Item1"
+                       onclick="MoveToThePendingOrHistory('@Url.Action("MoveToThePendingOrHistory", new { orderId = Model.Item1.OrderId })', this)" />
+                <input class="od-btn-sm" id="replacementsButton" type="button"
+                       value="Multi-Replace" onclick="window.location.href ='@Url.Action("Index","MultiReplace", new {OrderId = Model.Item1.OrderId})';" />
+            </div>
+        </div>
+
+        @* ══════════════════════════════════════════════════════════
+           ORDER INFO + CUSTOMER INFO — side by side
+           ══════════════════════════════════════════════════════════ *@
+        <div class="od-info-grid">
+            @* ── Order Info ── *@
+            <div class="od-card">
+                <div class="od-card-header" style="padding: 6px 14px; font-size: 12px;">
+                    <strong style="font-size: 13px;">Order Information</strong>
+                </div>
+                <div class="od-card-body">
+                    <div class="od-data-row">
+                        <span class="od-data-label">Market</span>
+                        <span class="od-data-value" style="font-weight: 600; font-size: 14px;">@MarketCache.GetName(Model.Item1.MarketId.Value)</span>
+                    </div>
+                    <div class="od-data-row">
+                        <span class="od-data-label">Seller</span>
+                        <span class="od-data-value">
+                            @SellerCache.GetName(Model.Item1.SellerId)
+                            @{
+                                var sellerLogin = SellerCache.GetSellerLoginUrl(Model.Item1.SellerId);
+                                if (sellerLogin != String.Empty)
+                                {
+                                    <a href="@sellerLogin" target="_blank" style="color: #3388AA; margin-left: 6px; font-size: 12px;">Seller Login</a>
+                                }
+                            }
+                        </span>
+                    </div>
+                    <div class="od-data-row">
+                        <span class="od-data-label">Site Order Date</span>
+                        <span class="od-data-value">@Model.Item1.DateOrdered.ToShortDateString()</span>
+                    </div>
+                    <div class="od-data-row">
+                        <span class="od-data-label">Import Date</span>
+                        <span class="od-data-value">@(Model.Item1.DateCreated != null ? Model.Item1.DateCreated.Value.ToShortDateString() : String.Empty)</span>
+                    </div>
+                </div>
+                <div style="padding: 0 14px 10px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                        <strong style="font-size: 12px; color: #3a5a1e; text-transform: uppercase; letter-spacing: 0.03em;">Shipping Address</strong>
+                        <span>
+                            <img src="~/Content/icons/Document-Copy-icon.png" class="od-copy-icon" onclick="CopyItem('@Html.Raw(Model.Item1.Address.ToString())'); return false;" />
+                            @Html.Image(Url.Content("~/Content/icons/loading.gif"), null, new { id = "address-verification-loading", style = "display:none" })
+                            <input id="AddresVerification" type="button" title="@EnumTranslator.GetDescription((VerificationStatus)Model.Item1.Address.VerificationStatus)"
+                                   value="@EnumTranslator.GetDescription((VerificationStatus)Model.Item1.Address.VerificationStatus)"
+                                   onclick="order_address_verification('@Url.Action("OrderShippingAddressVerification", new { orderId = @Model.Item1.OrderId })', this)"
+                                   class="od-btn-sm" style="font-size: 10px;" />
+                            @Html.ActionLink("History", "OrderShippingAddressChanges", new { orderId = Model.Item1.OrderId },
+                                new {
+                                    title = "Order Shipping Address Changes",
+                                    @class = "od-action-link",
+                                    style = "font-size: 11px;",
+                                    onclick = "get_addres_changes(this, 'Order Shipping Address Changes for Order [# " + @Model.Item1.MarketOrderNumber + "]'); return false"
+                                })
+                        </span>
+                    </div>
+                    <div class="od-address-block">
+                        @Html.Raw(Model.Item1.Address.ToString())
+                    </div>
+                    <div id="addres-changes"></div>
+                </div>
+            </div>
+
+            @* ── Customer Info ── *@
+            <div class="od-card">
+                <div id="customer-info" style="width:0; height:0;"></div>
+                <div class="od-card-header" style="padding: 6px 14px; font-size: 12px;">
+                    <strong style="font-size: 13px;">Customer: @Model.Item1.Customer.FullName</strong>
+                    @Html.ActionLink("Info / Notes", "Customer", new { customerId = Model.Item1.CustomerId, orderIdForBack = Model.Item1.OrderId },
+                        new { title = "View Customer Info", @class = "od-action-link", onclick = "get_customer_info(this, customerFullName); return false" })
+                    @{
+                        tagsTitle = Model.Item1.GetCustomerTags();
+                        haveTags = !String.IsNullOrWhiteSpace(tagsTitle);
+                    }
+                    @Html.ActionLink("Tags", "TagsView", new { entityId = Model.Item1.CustomerId, tagType = TagType.Customer },
+                        new {
+                            title = haveTags ? tagsTitle : noTagsMsg,
+                            @class = "od-action-link" + (haveTags ? " tags" : ""),
+                            @style = haveTags ? "color:Red" : String.Empty,
+                            onclick = "get_tags(this,'Customer Tags<br/> [" + @Model.Item1.Customer.FullName + "]'); return false",
+                            id = String.Format("TagsLink{0}{1}", DateTime.Now.Second, DateTime.Now.Millisecond)
+                        })
+                </div>
+                @{
+                    Func<decimal, string> refundRateColor = (rate) => {
+                        var yellow = int.Parse(ConfigurationManager.AppSettings["RefundRateYellowThreshold"] ?? "15");
+                        var red = int.Parse(ConfigurationManager.AppSettings["RefundRateRedThreshold"] ?? "20");
+                        if (rate >= red) return "red";
+                        if (rate >= yellow) return "#B2911C";
+                        return "green";
+                    };
+                }
+                <div class="od-card-body">
+                    <div class="od-data-row">
+                        <span class="od-data-label">Customer Id</span>
+                        <span class="od-data-value">@Model.Item1.Customer.CustomerId</span>
+                    </div>
+                    <div class="od-data-row">
+                        <span class="od-data-label">Email</span>
+                        <span class="od-data-value">
+                            @Model.Item1.Customer.Email
+                            <img src="~/Content/icons/Document-Copy-icon.png" class="od-copy-icon" onclick="CopyItem('@Html.Raw(Model.Item1.Customer.Email.ToString())'); return false;" />
+                            <input class="od-btn-sm" type="button" value="Send Email" style="margin-left: 6px;"
+                                   onclick="window.location.href='@Url.Action("Compose", "Email", new { to = Model.Item1.Customer.Email, orderId = Model.Item1.OrderId, customerId = Model.Item1.CustomerId, customerName = Model.Item1.Customer.FullName, orderNumber = Model.Item1.MarketOrderNumber })';" />
+                        </span>
+                    </div>
+                    <div class="od-data-row">
+                        <span class="od-data-label">Phone</span>
+                        <span class="od-data-value">@Model.Item1.Customer.Phone</span>
+                    </div>
+                    <div class="od-data-row">
+                        <span class="od-data-label">Cell</span>
+                        <span class="od-data-value">@Model.Item1.Customer.CellPhone</span>
+                    </div>
+                    @if (Model.Item1.MarketId == (byte)MarketNames.MBWBStore)
+                    {
+                        <div class="od-data-row">
+                            <span class="od-data-label">Loyalty</span>
+                            <span class="od-data-value">@(WebsiteData.GetLoyaltyStatus(Model.Item1.Customer.Email) ? "Yes" : "No")</span>
+                        </div>
+                    }
+                    <div class="od-data-row">
+                        <span class="od-data-label">Orders</span>
+                        <span class="od-data-value">
+                            @Model.Item1.Customer.OrderCount
+                            @Html.ActionLinkWithImage(Url.Content("~/Content/icons/info.gif"), "GetOrderHistory",
+                                new { customerId = Model.Item1.Customer.CustomerId },
+                                new { title = "View Orders", onclick = "GetOrderHistory(this); return false", style = "vertical-align: top; cursor:pointer;" })
+                        </span>
+                    </div>
+                    <div class="od-data-row">
+                        <span class="od-data-label">Customer Refunds</span>
+                        <span class="od-data-value">
+                            <span class="od-refund-badge" style="color: @refundRateColor(Model.Item1.RefundRateByCustomer); background: @(refundRateColor(Model.Item1.RefundRateByCustomer) == "green" ? "#e8f5e0" : refundRateColor(Model.Item1.RefundRateByCustomer) == "red" ? "#fde8e8" : "#fef9e0");">
+                                @Model.Item1.RefundRateByCustomer.ToString("0.#")%
+                            </span>
+                            @Html.ActionLinkWithImage(Url.Content("~/Content/icons/info.gif"), "GetRefundRateByCustomerDetail",
+                                new { customerId = Model.Item1.Customer.CustomerId },
+                                new { title = "View Customer Refunded Orders", onclick = "GetRefundRateByCustomerDetail(this); return false", style = "vertical-align: top; cursor:pointer;" })
+                        </span>
+                    </div>
+                    <div class="od-data-row">
+                        <span class="od-data-label">Address Refunds</span>
+                        <span class="od-data-value">
+                            <span class="od-refund-badge" style="color: @refundRateColor(Model.Item1.RefundRateByAddress); background: @(refundRateColor(Model.Item1.RefundRateByAddress) == "green" ? "#e8f5e0" : refundRateColor(Model.Item1.RefundRateByAddress) == "red" ? "#fde8e8" : "#fef9e0");">
+                                @Model.Item1.RefundRateByAddress.ToString("0.#")%
+                            </span>
+                            @Html.ActionLinkWithImage(Url.Content("~/Content/icons/info.gif"), "GetRefundRateByAddressDetail",
+                                new { zip = Model.Item1.Address != null ? Model.Item1.Address.Zip : "", addressLine1 = Model.Item1.Address != null ? Model.Item1.Address.AddressLine1 : "", addressLine2 = Model.Item1.Address != null ? Model.Item1.Address.AddressLine2 : "" },
+                                new {
+                                    title = "View Address Refunded Orders",
+                                    onclick = "GetRefundRateByAddressDetail(this); return false",
+                                    style = "vertical-align: top; cursor:pointer;",
+                                    data_address = Model.Item1.Address != null ? ((Model.Item1.Address.AddressLine1 ?? "") + " " + (Model.Item1.Address.AddressLine2 ?? "")).Trim() : ""
+                                })
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @* ══════════════════════════════════════════════════════════
+           ORDER NOTES
+           ══════════════════════════════════════════════════════════ *@
+        @{List<NoteEntity> orderNotes =
+              Model.Item1.OrderNotes.Select<OrderNotes, NoteEntity>(n => new NoteEntity
+              {
+                  NoteId = n.NoteId,
+                  EntityId = n.EntityId,
+                  NoteDate = n.NoteDate,
+                  Note = n.Note,
+                  IsUserNote = n.IsUserNote,
+                  UserId = n.UserId
+              }).OrderByDescending(e => e.NoteDate).ToList();
+            NotesModel orderNotesModel = new NotesModel(orderNotes);
+        }
+        <div class="od-card">
+            <div class="od-notes-header">
+                <span>Order Notes (@orderNotes.Count)</span>
+                @Html.ActionLink("+ Add Note", "SaveOrderNote", null,
+                    new {
+                        onclick = String.Format("add_note(this, {0}, '{1}', 'order-notes-div', {2}); return false;",
+                          Model.Item1.OrderId, Url.Action("OrderNotes", new { orderId = @Model.Item1.OrderId }), 5),
+                        @class = "od-action-link",
+                        style = "font-weight: 600;"
+                    })
+            </div>
+            <div id="order-notes-div" class="od-notes-body">
+                @Html.Partial("NotesPartialView", orderNotesModel)
+            </div>
+        </div>
+
+        @* ══════════════════════════════════════════════════════════
+           REFUNDS LIST (conditional)
+           ══════════════════════════════════════════════════════════ *@
+        @{
+            var refunds = Model.Item1.GetOrderRefunds();
+            var actionableRefunds = refunds.Where(r => String.IsNullOrWhiteSpace(r.TransactionId) && (r.Status == RefundStatus.Pending || r.Status == RefundStatus.Failed)).ToList();
+            var refundButtonsEnabled = string.Equals(WebConfigurationManager.AppSettings["RefundButtonsEnabled"], "true", StringComparison.OrdinalIgnoreCase);
+            var refundAdminOnly = string.Equals(WebConfigurationManager.AppSettings["RefundButtonsAdminOnly"], "true", StringComparison.OrdinalIgnoreCase);
+            var refundUser = UserCache.GetUserByLogin(User.Identity.Name);
+            var canSeeRefundButtons = refundButtonsEnabled && (!refundAdminOnly || (refundUser != null && refundUser.IsAdministrator));
+        }
+        @if (actionableRefunds.Count > 0 && Model.Item1.MarketId == (byte)MarketNames.MBWBStore && canSeeRefundButtons)
+        {
+            var orderPaymentMethods = (Model.Item1.PaymentTransactions ?? new List<OrderPayment>())
+                .Where(pt => pt.RefundId == null)
+                .Select(pt => pt.PaymentMethod)
+                .Distinct()
+                .ToList();
+            var gcMethods = new[] { "Gift Certificate", "GiftCertificate" };
+            var stripeMethods = new[] { "Stripe", "Visa", "MasterCard", "American Express", "Discover", "ApplePay" };
+            var paypalMethods = new[] { "PayPal" };
+            var hasGC = orderPaymentMethods.Any(pm => gcMethods.Any(g => g.Equals(pm, StringComparison.InvariantCultureIgnoreCase)));
+            var hasStripe = orderPaymentMethods.Any(pm => stripeMethods.Any(s => s.Equals(pm, StringComparison.InvariantCultureIgnoreCase)));
+            var hasPayPal = orderPaymentMethods.Any(pm => paypalMethods.Any(p => p.Equals(pm, StringComparison.InvariantCultureIgnoreCase)));
+
+            <div class="od-card">
+                <table class="od-refund-table" id="refunds">
+                    <caption><strong>Refunds List</strong> (@actionableRefunds.Count pending)</caption>
+                    <tr>
+                        <th>SKU</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Reason</th>
+                        <th>Created</th>
+                        <th>Created By</th>
+                        <th>Action</th>
+                    </tr>
+                    @foreach (var r in actionableRefunds)
+                    {
+                        <tr>
+                            <td>@r.SKU</td>
+                            <td>@r.AmountWithCurrency</td>
+                            <td>@r.Status</td>
+                            <td>@if (r.ReasonId != null) { @ReasonCache.GetName(Convert.ToInt16(r.ReasonId)) }</td>
+                            <td>@r.Created</td>
+                            <td>@UserCache.GetName(r.CreatedByUserId)</td>
+                            <td id="refundAction@(r.RefundId)" style="white-space: nowrap;">
+                                @if (hasGC)
+                                {
+                                    <input type="button" class="od-btn-sm" value="GC Refund" title="Refund to Gift Certificate"
+                                           onclick="ProcessRefundPayment(@r.RefundId, @r.SellerId, 'GiftCertificate', '@Url.Action("ProcessGiftCertRefund")');" />
+                                }
+                                @if (hasStripe)
+                                {
+                                    <input type="button" class="od-btn-sm" value="Stripe Refund" title="Refund via Stripe"
+                                           onclick="ProcessRefundPayment(@r.RefundId, @r.SellerId, 'Stripe', '@Url.Action("ProcessStripeRefund")');" />
+                                }
+                                @if (hasPayPal)
+                                {
+                                    if (ppTransaction != null)
+                                    {
+                                        @Html.ActionLink("PayPal Refund", "RefundOrderWithPayPalDialog", new { refundId = r.RefundId, sellerId = r.SellerId },
+                                            new {
+                                                @class = "od-btn-sm",
+                                                style = "display: inline-block; text-decoration: none;",
+                                                onclick = String.Format("ShowRefundOrderWithPayPalDialog(this, '{0}', '{1}?refundId={2}', {2}, {3}); return false;",
+                                                    "Refund With PayPal", Url.Action("RefundOrderWithPayPal"), r.RefundId, r.SellerId),
+                                                id = String.Format("refundPPDialog{0}", r.RefundId)
+                                            })
+                                    }
+                                    <input type="button" class="od-btn-sm" value="PayPal API Refund" title="Refund via PayPal API"
+                                           onclick="ProcessRefundPayment(@r.RefundId, @r.SellerId, 'PayPal', '@Url.Action("ProcessPayPalApiRefund")');" />
+                                }
+                                @if (!hasGC && !hasStripe && !hasPayPal)
+                                {
+                                    @:No recognized payment method (@String.Join(", ", orderPaymentMethods))
+                                }
+                            </td>
+                        </tr>
+                    }
+                </table>
+            </div>
+        }
+
+        @* ══════════════════════════════════════════════════════════
+           SHIPMENTS
+           ══════════════════════════════════════════════════════════ *@
+        <div id="shipment-notes"></div>
+        <div id="item-details" style="width:0; height:0;"></div>
+        <div style="margin-bottom: 70px;">
+            @{int shipmentCount = Model.Item2.Count();
+                int counter = 0;
+                foreach (Shipment shipment in Model.Item2)
+                {
+                    string heldId = String.Format("{0}_isHeld", shipment.ShipmentId);
+                    string checkAllId = String.Concat("checkAll", shipment.ShipmentId);
+                    counter++;
+
+                    <div class="od-card">
+                        @* ── Shipment header ── *@
+                        <div class="od-card-header">
+                            <input id="@checkAllId" type="checkbox" class="checkAllShipments"
+                                   title="@String.Format("Select All Items for shipment #{0}", shipment.ShipmentId)" />
+                            <label for="@checkAllId" title="Select All" style="font-size: 12px; cursor: pointer;">Select All</label>
+                            <span class="od-separator"></span>
+                            <span>
+                                Shipment #<strong>@shipment.ShipmentId</strong>
+                                <img src="~/Content/icons/Document-Copy-icon.png" class="od-copy-icon" onclick="CopyItem('@shipment.ShipmentId.ToString()'); return false;" />
+                            </span>
+                            <span style="font-size: 11px; color: #666;">(@counter of @shipmentCount)</span>
+                            <span class="od-badge">@Html.Partial("StatusPartial", new StatusModel(shipment.Status, 0))</span>
+                            @if (shipment.MarketBookOrders.Count > 1)
+                            {
+                                int ordersCount = shipment.MarketBookOrders.Select(m => m.OrderId).Distinct().Count();
+                                @Html.Raw(String.Format("<span style='font-size:12px;'>({0} items, <b {2}>{1}</b> orders)</span>", shipment.MarketBookOrders.Count,
+                                    ordersCount, ordersCount > 1 ? "style=\"color:Red\"" : String.Empty));
+                            }
+                            <span class="od-separator"></span>
+                            <span style="font-size: 12px;">From: <b>@(shipment.LocationGroupName ?? "Unknown")</b></span>
+                            @Html.ActionLinkWithImage(Url.Content("~/Content/icons/doc-edit-icon.png"), "Edit", "CheckEditOrder",
+                                new { orderId = Model.Item1.OrderId, shipmentId = shipment.ShipmentId },
+                                new { onclick = "EditOrder(this); return false", id = "editShipmentLink", @class = "od-action-link" })
+                            @Html.ActionLink("Notes", "ShipmentNotes", new { shipmentId = shipment.ShipmentId },
+                                new { title = "View Shipment Notes", @class = "od-action-link", onclick = "get_shipment_notes(this, " + shipment.ShipmentId + "); return false" })
+                            @Html.Hidden(String.Format("{0}_shipmentIsHeld", shipment.ShipmentId), !shipment.IsHeld, new { id = String.Format("{0}_newShipmentIsHeldStatus", shipment.ShipmentId) })
+                            @{
+                                tagsTitle = shipment.GetTags();
+                                haveTags = !String.IsNullOrWhiteSpace(tagsTitle);
+                            }
+                            @Html.ActionLink("Tags", "TagsView", new { entityId = shipment.ShipmentId, tagType = TagType.Shipment },
+                                new {
+                                    title = haveTags ? tagsTitle : noTagsMsg,
+                                    @class = "od-action-link" + (haveTags ? " tags" : ""),
+                                    @style = haveTags ? "color:Red" : String.Empty,
+                                    onclick = "get_tags(this,'Shipment Tags [# " + shipment.ShipmentId + "]'); return false",
+                                    id = String.Format("TagsLink{0}{1}", DateTime.Now.Second, DateTime.Now.Millisecond)
+                                })
+                            @Html.ActionLink("Postage Log", "ViewPostageLog", new { shipmentId = shipment.ShipmentId, sellerId = shipment.SellerId },
+                                new { @class = "od-action-link", onclick = "ViewPostageLog(this); return false" })
+                            <span class="od-hold-group">
+                                <input id="@heldId" type="checkbox" title="Hold" @(shipment.IsHeld ? "checked" : String.Empty)
+                                       onclick="update_shipment_isheld(@Model.Item1.OrderId, @shipment.ShipmentId, '@Url.Action("OrderNotes")', this)" />
+                                <label for="@heldId">Hold</label>
+                                @Html.Image(Url.Content("~/Content/icons/loading.gif"), null, new { id = @String.Format("{0}-held-loading", shipment.ShipmentId), style = "display:none" })
+                            </span>
+                            @if (shipment.Status == (byte)IndabaWeb.CC.Biz.Enums.OrderStatus.Shipped && shipment.ShippedDays > 0)
+                            {
+                                <span style="font-size: 12px; margin-left: 8px;">
+                                    Days Since Shipped: <strong>@shipment.ShippedDays</strong>
+                                </span>
+                            }
+                        </div>
+
+                        @* ── Shipment metadata ── *@
+                        <div class="od-shipment-meta">
+                            <div>
+                                <div class="od-meta-item">
+                                    <span class="od-meta-label">Ship Date</span>
+                                    <span class="od-meta-value">@DateTimeUtils.GetDateFromNullableDT(shipment.PostageDate)</span>
+                                </div>
+                                <div class="od-meta-item">
+                                    <span class="od-meta-label">BNA Date</span>
+                                    <span class="od-meta-value">@DateTimeUtils.GetDateFromNullableDT(shipment.BNADate)</span>
+                                </div>
+                                <div class="od-meta-item">
+                                    <span class="od-meta-label">Tracking Id</span>
+                                    <span class="od-meta-value">
+                                        @Html.Raw(shipment.GetTrackingUrl())
+                                        <img src="~/Content/icons/Document-Copy-icon.png" class="od-copy-icon" onclick="CopyItem('@Html.Raw(shipment.GetTrackingId())'); return false;" />
+                                    </span>
+                                </div>
+                                @if (shipment.TrackingEvents != null && shipment.TrackingEvents.Any())
+                                {
+                                    <div class="od-meta-item">
+                                        <span class="od-meta-label">Tracking Status</span>
+                                        <span class="od-meta-value">
+                                            <a href="#" onclick="const div = document.getElementById('@("divTrackingEvents_" + shipment.ShipmentId)'); div.style.display = (div.style.display === 'none') ? 'block' : 'none'; return false;">@shipment.TrackingStatus</a>
+                                            <div id="@("divTrackingEvents_" + shipment.ShipmentId)" style="display:none;">
+                                                @Html.Partial("TrackingEvents", shipment.TrackingEvents)
+                                            </div>
+                                        </span>
+                                    </div>
+                                }
+                                <div class="od-meta-item">
+                                    <span class="od-meta-label">Carrier</span>
+                                    <span class="od-meta-value">
+                                        @Html.Raw(shipment.GetCarrier())
+                                        <img src="~/Content/icons/Document-Copy-icon.png" class="od-copy-icon" onclick="CopyItem('@Html.Raw(shipment.GetTrackingLink())'); return false;" />
+                                    </span>
+                                </div>
+                                <div class="od-meta-item">
+                                    <span class="od-meta-label">Delivery Confirmation</span>
+                                    <span class="od-meta-value">@shipment.DeliveryStatus</span>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="od-meta-item">
+                                    <span class="od-meta-label">Shipping Method</span>
+                                    <span class="od-meta-value">@shipment.MarketBookOrders.First().ShippingMethod</span>
+                                </div>
+                                <div class="od-meta-item">
+                                    <span class="od-meta-label">Shipping Group</span>
+                                    <span class="od-meta-value">@shipment.ShippingGroup</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        @* ── Shipment items table ── *@
+                        @{
+                            var items = shipment.MarketBookOrders.OrderBy(orderItem => orderItem.OrderId == Model.Item1.OrderId ? 1 : 0)
+                                .ThenBy(orderItem => orderItem.Title);
+                            bool alternateColor = false;
+                        }
+                        <div class="od-items-toggle expand" onclick="">
+                            Shipment Items (@items.Count())
+                        </div>
+                        <div class="collapse" style="@(shipment.MarketBookOrders.Count > 5 ? "display: none;" : String.Empty)">
+                            <table class="od-items-table">
+                                <tr>
+                                    <th style="width: 30px;">&nbsp;</th>
+                                    <th>Tags</th>
+                                    <th>SKU</th>
+                                    <th>ISBN</th>
+                                    <th>Title</th>
+                                    <th style="text-align: right;">Price Paid</th>
+                                    <th style="text-align: right;">Breakdown</th>
+                                    <th>Status</th>
+                                    <th>Order #</th>
+                                    <th>Received</th>
+                                    <th>From Supplier</th>
+                                    <th>Cancelled</th>
+                                    <th>Cancel Reason</th>
+                                    <th>Replaced</th>
+                                    <th style="width: 70px;">Actions</th>
+                                </tr>
+                                @foreach (MarketBookOrder item in items)
+                                {
+                                    string rowStyle = "v1";
+                                    if (item.OrderId != Model.Item1.OrderId)
+                                    {
+                                        rowStyle = alternateColor ? "v3" : "v4";
+                                    }
+                                    else
+                                    {
+                                        if (alternateColor) { rowStyle = "v2"; }
+                                    }
+                                    alternateColor = !alternateColor;
+                                    tagsTitle = item.GetTags();
+                                    haveTags = !String.IsNullOrWhiteSpace(tagsTitle);
+                                    <tr class="@rowStyle">
+                                        <td>
+                                            <input type="checkbox" class="shipCheckbox"
+                                                   id="@String.Concat("shipCheckbox", item.MarketBookOrderId)"
+                                                   name="@String.Concat("shipCheckbox", item.ShipmentId)" />
+                                            <input type="hidden" name="shipmentItem" id="@String.Concat("shipmentItem", item.MarketBookOrderId)" value="" />
+                                            @Html.Hidden(String.Concat("canUncancel", item.MarketBookOrderId), item.CanDoUnCancel())
+                                            @Html.Hidden(String.Concat("canUnrefund", item.MarketBookOrderId), item.CanDoUnrefund())
+                                        </td>
+                                        <td style="white-space: nowrap;">
+                                            @Html.ActionLink("Tags", "TagsView", new { entityId = item.MarketBookOrderId, tagType = TagType.OrderItem },
+                                                new {
+                                                    title = haveTags ? tagsTitle : noTagsMsg,
+                                                    @class = "tags",
+                                                    @style = haveTags ? "color:Red" : String.Empty,
+                                                    onclick = "get_tags(this,'Order Item Tags [# " + item.SKU + "]'); return false",
+                                                    id = String.Format("TagsLink{0}{1}", DateTime.Now.Second, DateTime.Now.Millisecond)
+                                                })
+                                        </td>
+                                        <td style="white-space: nowrap;">
+                                            <a href="@Url.Action("ShipmentItemDetails", "Orders", new { mboId = item.MarketBookOrderId })"
+                                               title="View item details" onclick="get_shipment_item_details(this); return false">
+                                                <img src="@Url.Content("~/Content/icons/info.gif")" alt="details" style="vertical-align: middle; padding: 0;" />@item.SKU
+                                            </a>
+                                            @if (item.EBookOrderItemId.HasValue)
+                                            {
+                                                <br />
+                                                <a href="@Url.Action("FulfillmentHistory", "Orders", new { mboId = item.BackOrderItemId.HasValue ? 0 : item.MarketBookOrderId })"
+                                                   title="View Fulfillment History" onclick="get_fulfillment_history(this); return false">
+                                                    <img src="@Url.Content("~/Content/icons/EBook.png")" alt="eBook" style="vertical-align: middle; padding: 0;" /> Fulfillment
+                                                </a>
+                                            }
+                                        </td>
+                                        <td>@item.ISBN</td>
+                                        <td><div title="@item.Title">@(item.Title.Length > 50 ? item.Title.Substring(0, 47) + "..." : item.Title)</div></td>
+                                        @{var itemPayments = Model.Item1.Payments.Where(x => x.OrderItemId == item.MarketBookOrderId && x.TransactionGroupId != 3 && x.TransactionGroupId != 4);}
+                                        <td class="od-item-total">@itemPayments.Where(x => x.RefundId == null && x.TransactionGroupId != (int)TransactionGroupEnum.MarketCommission).GroupBy(l => l.OrderItemId).Select(orderItem => orderItem.Sum(p => p.Type == 1 ? -p.Amount : p.Amount)).FirstOrDefault().ToString("C", SellerCache.GetCurrencyInfo(item.SellerId))</td>
+                                        <td style="text-align: right; width: 130px;">
+                                            <div id="@("itemBreakdownCollapsed_" + item.MarketBookOrderId)">
+                                                <a href="#" onclick="ExpandItemBreakdown(@item.MarketBookOrderId)">Expand +</a>
+                                            </div>
+                                            <div id="@("itemBreakdownExpanded_" + item.MarketBookOrderId)" hidden class="od-breakdown-detail">
+                                                <a href="#" onclick="CollapseItemBreakdown(@item.MarketBookOrderId)">Collapse -</a>
+                                                <div class="od-breakdown-line"><span>Subtotal:</span><span>@itemPayments.Where(x => x.RefundId == null && x.TransactionGroupId == (int)TransactionGroupEnum.PaymentForProduct).GroupBy(l => l.OrderItemId).Select(orderItem => orderItem.Sum(p => p.Type == 1 ? -p.Amount : p.Amount)).FirstOrDefault().ToString("C", SellerCache.GetCurrencyInfo(item.SellerId))</span></div>
+                                                <div class="od-breakdown-line"><span>Discount:</span><span>@itemPayments.Where(x => x.RefundId == null && PooledTransactionGroup.IsDiscountGroup(x.TransactionGroupId)).GroupBy(l => l.OrderItemId).Select(orderItem => orderItem.Sum(p => p.Type == 1 ? -p.Amount : p.Amount)).FirstOrDefault().ToString("C", SellerCache.GetCurrencyInfo(item.SellerId))</span></div>
+                                                <div class="od-breakdown-line"><span>Shipping:</span><span>@itemPayments.Where(x => x.RefundId == null && x.TransactionGroupId == (int)TransactionGroupEnum.PaymentForShipping).GroupBy(l => l.OrderItemId).Select(orderItem => orderItem.Sum(p => p.Type == 1 ? -p.Amount : p.Amount)).FirstOrDefault().ToString("C", SellerCache.GetCurrencyInfo(item.SellerId))</span></div>
+                                                <div class="od-breakdown-line"><span>Tax:</span><span>@itemPayments.Where(x => x.RefundId == null && PooledTransactionGroup.IsTaxGroup(x.TransactionGroupId)).GroupBy(l => l.OrderItemId).Select(orderItem => orderItem.Sum(p => p.Type == 1 ? -p.Amount : p.Amount)).FirstOrDefault().ToString("C", SellerCache.GetCurrencyInfo(item.SellerId))</span></div>
+                                                <div class="od-breakdown-line" style="font-weight: 700; border-top: 1px solid #ccc; padding-top: 2px;"><span>Total:</span><span>@itemPayments.Where(x => x.RefundId == null && x.TransactionGroupId != (int)TransactionGroupEnum.MarketCommission).GroupBy(l => l.OrderItemId).Select(orderItem => orderItem.Sum(p => p.Type == 1 ? -p.Amount : p.Amount)).FirstOrDefault().ToString("C", SellerCache.GetCurrencyInfo(item.SellerId))</span></div>
+                                            </div>
+                                        </td>
+                                        <td style="white-space: nowrap;">@Html.Partial("StatusPartial", new StatusModel(item.Status, 0))</td>
+                                        <td style="white-space: nowrap;">@Html.ActionLink(item.OrderNumber, "OrderDetails", new { OrderId = item.OrderId }, new { target = "_blank" })</td>
+                                        <td>@ReceivedStatusCache.GetName(item.ReceivedStatusId) @item.OnSaleDate</td>
+                                        <td>@(item.ShippedFromSupplier.HasValue ? item.ShippedFromSupplier.Value.ToShortDateString() : string.Empty)</td>
+                                        <td>@(item.CancelationDate.HasValue ? item.CancelationDate.Value.ToString() : string.Empty)</td>
+                                        <td>@item.CancelationReason</td>
+                                        <td>@item.GetLastReplaceDate()</td>
+                                        <td>
+                                            <ul class="sddm" style="margin: 0; padding: 0;">
+                                                <li>
+                                                    <a href="#"
+                                                       onmouseover="mopen('@item.MarketBookOrderId')"
+                                                       onmouseout="mclosetime()">
+                                                        <img src="@Url.Content("~/Content/icons/actions.png")" alt="actions" style="vertical-align: middle; padding: 0;" /> Actions
+                                                    </a>
+                                                    <div id="@item.MarketBookOrderId"
+                                                         onmouseover="mcancelclosetime()"
+                                                         onmouseout="mclosetime()">
+                                                        @if (item.EBookOrderItemId.HasValue)
+                                                        {
+                                                            <a href="@Url.Action("ResetIngram", "Orders", new { mboId = item.BackOrderItemId.HasValue ? 0 : item.MarketBookOrderId })"
+                                                               title="Reset eBook Download Link" onclick="reset_Ingram(this); return false">Reset eBook Download Link</a>
+                                                        }
+                                                        else
+                                                        {
+                                                            @Html.ActionLink("Replace", "Replace", new { marketBookOrderId = item.MarketBookOrderId, orderId = Model.Item1.OrderId },
+                                                                new { onclick = "return check_replacement(this, " + (item.BackOrderItemId.HasValue ? item.BackOrderItemId.Value : 0) + ");" })
+                                                        }
+                                                    </div>
+                                                </li>
+                                            </ul>
+                                        </td>
+                                    </tr>
+                                }
+                            </table>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    @* ══════════════════════════════════════════════════════════
+       BOTTOM ACTION BAR
+       ══════════════════════════════════════════════════════════ *@
+    <div class="od-bottom-bar">
+        <input type="submit" class="button rounded-corners" name="actionName" title="Cancel Selected Items" value="Cancel" />
+        <input type="submit" class="button rounded-corners" name="actionName" title="Un-cancel Selected Items" value="Un-Cancel" id="UnCancelButton"
+               style="display: none;" />
+        <input type="submit" class="button rounded-corners" name="actionName" title="Refund Selected Items" value="Refund" />
+        <input type="submit" class="button rounded-corners" name="actionName" title="Un-refund Selected Items" value="Un-Refund" id="UnRefundButton"
+               style="display: none;" />
+        <input type="submit" class="button rounded-corners" name="actionName" title="Restock Selected Items" value="Restock" />
+        <input type="submit" class="button rounded-corners" name="actionName" title="Return Selected Items" value="Return" />
+        <span class="od-items-count">Items Selected: <span class="itemsSelected">0</span></span>
+    </div>
+
+    <script>
+        function ExpandItemBreakdown(marketBookOrder) {
+            $("#itemBreakdownExpanded_" + marketBookOrder).show();
+            $("#itemBreakdownCollapsed_" + marketBookOrder).hide();
+        }
+        function CollapseItemBreakdown(marketBookOrder) {
+            $("#itemBreakdownExpanded_" + marketBookOrder).hide();
+            $("#itemBreakdownCollapsed_" + marketBookOrder).show();
+        }
+        function CopyItem(item) {
+            item = item.replace(/<br\s*[\/]?>/gi, "\n");
+            navigator.clipboard.writeText(item);
+        }
+    </script>
+}

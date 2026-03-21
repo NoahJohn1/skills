@@ -1,0 +1,210 @@
+@using IndabaWeb.CC.Biz.Cache
+@*
+    Refund Confirmation Modal
+
+    Usage: Render this partial on the refund page, then call openRefundConfirmation()
+    from your submit handler. The modal collects amount, reason, and notes before
+    allowing the refund to proceed.
+
+    Dependencies: jQuery UI (already in _Layout.cshtml), Site.css (.ModalWindow, .rounded-corners)
+*@
+
+<div id="refund-confirm-dialog" class="ModalWindow" title="Confirm Refund">
+    <div id="refund-confirm-content" style="padding: 10px;">
+        <div id="refund-confirm-error" style="color: #cc0000; font-weight: bold; margin-bottom: 8px; display: none;"></div>
+
+        <div style="background-color: #fff3cd; border: 1px solid #ddc46c; padding: 8px 12px; margin-bottom: 14px; border-radius: 4px;">
+            <strong>You are about to issue a refund.</strong> Please verify the details below.
+        </div>
+
+        <table style="width: 100%;" cellpadding="4">
+            <tr>
+                <td style="width: 140px; vertical-align: top;">
+                    <label for="refundConfirmAmount"><strong>Refund Amount:</strong></label>
+                </td>
+                <td>
+                    <input type="text" id="refundConfirmAmount" name="refundConfirmAmount"
+                           class="rounded-corners auto {aSep: ' ', mDec: 2}"
+                           style="width: 140px; padding: 4px 6px; font-size: 14px; font-weight: bold;" />
+                    <span id="refundConfirmCurrency" style="margin-left: 4px; color: #555;"></span>
+                </td>
+            </tr>
+            <tr>
+                <td style="vertical-align: top;">
+                    <label for="refundConfirmParentReason"><strong>Refund Category:</strong></label>
+                </td>
+                <td>
+                    @Html.DropDownList("refundConfirmParentReason",
+                        ReasonCache.GetParentRefundReasonList(),
+                        new { id = "refundConfirmParentReason", @class = "rounded-corners", style = "width: 260px; padding: 3px;" })
+                </td>
+            </tr>
+            <tr>
+                <td style="vertical-align: top;">
+                    <label for="refundConfirmReason"><strong>Refund Reason:</strong></label>
+                </td>
+                <td>
+                    @Html.DropDownList("refundConfirmReason",
+                        ReasonCache.GetChildRefundReasonList(),
+                        new { id = "refundConfirmReason", @class = "rounded-corners", style = "width: 260px; padding: 3px;", disabled = "disabled" })
+                </td>
+            </tr>
+            <tr>
+                <td style="vertical-align: top;">
+                    <label for="refundConfirmNotes"><strong>Notes:</strong></label>
+                </td>
+                <td>
+                    <textarea id="refundConfirmNotes" name="refundConfirmNotes"
+                              class="rounded-corners"
+                              rows="4"
+                              style="width: 95%; padding: 4px 6px; resize: vertical;"
+                              placeholder="Optional: add context for this refund"></textarea>
+                </td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<script type="text/javascript">
+    var refundConfirmAllChildOptions;
+    var refundConfirmCallback = null;
+
+    (function () {
+        var childDropdown = document.getElementById('refundConfirmReason');
+        refundConfirmAllChildOptions = Array.from(childDropdown.options);
+        refundConfirmAllChildOptions.forEach(function (option) {
+            if (option.parentElement && option.parentElement.tagName === 'OPTGROUP') {
+                option.setAttribute('data-group', option.parentElement.label);
+            }
+        });
+    })();
+
+    function updateRefundConfirmChildDropdown() {
+        var parentDropdown = document.getElementById('refundConfirmParentReason');
+        var childDropdown = document.getElementById('refundConfirmReason');
+        var selectedParentId = parentDropdown.value;
+
+        childDropdown.innerHTML = '';
+        childDropdown.appendChild(refundConfirmAllChildOptions[0].cloneNode(true));
+
+        if (selectedParentId) {
+            refundConfirmAllChildOptions.forEach(function (option) {
+                if (option.getAttribute('data-group') === selectedParentId) {
+                    childDropdown.appendChild(option.cloneNode(true));
+                }
+            });
+            childDropdown.disabled = false;
+        } else {
+            childDropdown.disabled = true;
+        }
+        childDropdown.value = '';
+    }
+
+    $('#refundConfirmParentReason').on('change', updateRefundConfirmChildDropdown);
+
+    function validateRefundConfirmation() {
+        var errors = [];
+        var amount = $('#refundConfirmAmount').val().replace(/\s/g, '');
+        var parentReason = $('#refundConfirmParentReason').val();
+        var reason = $('#refundConfirmReason').val();
+
+        if (!amount || parseFloat(amount) <= 0) {
+            errors.push('Refund amount must be greater than zero.');
+        }
+        if (!parentReason) {
+            errors.push('Please select a refund category.');
+        }
+        if (!reason) {
+            errors.push('Please select a refund reason.');
+        }
+
+        if (errors.length > 0) {
+            $('#refund-confirm-error').html(errors.join('<br />')).show();
+            return false;
+        }
+
+        $('#refund-confirm-error').hide();
+        return true;
+    }
+
+    /**
+     * Opens the refund confirmation modal.
+     *
+     * @@param {object} options
+     *   - amount:       (string|number) Pre-filled refund amount
+     *   - currency:     (string) Currency label, e.g. "USD" or "$"
+     *   - parentReason: (string|number, optional) Pre-selected parent reason ID
+     *   - reason:       (string|number, optional) Pre-selected child reason ID
+     *   - notes:        (string, optional) Pre-filled notes
+     *   - onConfirm:    (function) Called with { amount, parentReasonId, reasonId, notes } on confirm
+     */
+    function openRefundConfirmation(options) {
+        options = options || {};
+
+        $('#refund-confirm-error').hide();
+
+        if (options.amount) {
+            $('#refundConfirmAmount').val(options.amount);
+        } else {
+            $('#refundConfirmAmount').val('');
+        }
+
+        if (options.currency) {
+            $('#refundConfirmCurrency').text(options.currency);
+        }
+
+        if (options.parentReason) {
+            $('#refundConfirmParentReason').val(options.parentReason);
+            updateRefundConfirmChildDropdown();
+            if (options.reason) {
+                $('#refundConfirmReason').val(options.reason);
+            }
+        } else {
+            $('#refundConfirmParentReason').val('');
+            updateRefundConfirmChildDropdown();
+        }
+
+        $('#refundConfirmNotes').val(options.notes || '');
+
+        refundConfirmCallback = options.onConfirm || null;
+
+        $('#refund-confirm-dialog').dialog({
+            autoOpen: true,
+            modal: true,
+            width: 520,
+            resizable: false,
+            closeOnEscape: true,
+            buttons: [
+                {
+                    text: "Confirm Refund",
+                    "class": "button rounded-corners",
+                    click: function () {
+                        if (!validateRefundConfirmation()) {
+                            return;
+                        }
+                        var result = {
+                            amount: parseFloat($('#refundConfirmAmount').val().replace(/\s/g, '')),
+                            parentReasonId: $('#refundConfirmParentReason').val(),
+                            reasonId: $('#refundConfirmReason').val(),
+                            notes: $('#refundConfirmNotes').val()
+                        };
+                        $(this).dialog('close');
+                        if (refundConfirmCallback) {
+                            refundConfirmCallback(result);
+                        }
+                    }
+                },
+                {
+                    text: "Cancel",
+                    "class": "button rounded-corners",
+                    click: function () {
+                        $(this).dialog('close');
+                    }
+                }
+            ],
+            close: function () {
+                $('#refund-confirm-error').hide();
+            }
+        });
+    }
+</script>
