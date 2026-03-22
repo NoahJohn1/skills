@@ -1,7 +1,7 @@
 ---
 name: work-on-issue
 description: Fetch a GitHub issue by number, interview to fill gaps, then enter plan mode for approval before implementation.
-allowed-tools: Bash(*), Read, Grep, Glob, Edit, Write, Task, AskUserQuestion, EnterPlanMode
+allowed-tools: Bash(*), Read, Grep, Glob, Edit, Write, Task, AskUserQuestion, EnterPlanMode, Skill
 ---
 
 # Work On Issue
@@ -49,17 +49,23 @@ Confirm the branch was created and switched to.
 
 ### Step 4 — Interview to fill gaps
 
-Invoke the **interview skill** to clarify any ambiguities in the issue. Focus on:
+Call `Skill("i")` to run the deep-dive interview. The `i` skill will relentlessly ask questions until all ambiguity is eliminated. Focus areas:
 - What "done" looks like (acceptance criteria if not specified)
 - Any technical approach decisions the issue leaves open
 - Edge cases or constraints not mentioned
 - UI/UX details if the issue touches the frontend
 
-Use `AskUserQuestion` — do NOT skip straight to planning.
+Do NOT skip straight to planning — the `i` skill must complete first.
 
-### Step 5 — Enter plan mode
+### Step 5 — Detect frontend involvement
 
-After the interview is complete, call `EnterPlanMode`. In plan mode:
+After the interview, check whether the issue involves any frontend work. An issue is frontend-related if it mentions: screens, UI, components, layout, styling, navigation, forms, modals, lists, buttons, icons, colors, fonts, animations, or any user-facing visual element.
+
+If the issue IS frontend-related, call `Skill("frontend")` before entering plan mode. The `frontend` skill will handle UX analysis and design quality — let it complete fully before proceeding.
+
+### Step 6 — Enter plan mode
+
+After the interview (and frontend skill if applicable), call `EnterPlanMode`. In plan mode:
 - Explore the codebase relevant to the issue
 - Write a concrete implementation plan to the plan file
 - The user approves the plan via `ExitPlanMode`
